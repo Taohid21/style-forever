@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title id="cartPageTitle">Shopping Cart | Style Forever</title>
+  
+  <!-- Favicon -->
+  <link id="pageFavicon" rel="icon" type="image/jpeg" href="https://res.cloudinary.com/dwgvvzbvn/image/upload/v1788708839/b5fnlbs8a19t3hutx5wd.jpg">
+  
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Inter"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body { 
+      font-family: 'Inter', sans-serif; 
+      background-color: #f8fafc;
+      color: #0f172a;
+    }
+    .custom-scroll::-webkit-scrollbar { width: 4px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+  </style>
+</head>
+<body class="antialiased selection:bg-black selection:text-white min-h-screen flex flex-col">
+
+  <!-- Header Bar -->
+  <header class="bg-white/95 backdrop-blur-md border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      
+      <!-- Back Navigation & Brand -->
+      <div class="flex items-center gap-3">
+        <button onclick="handleBackNavigation()" class="w-9 h-9 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-800 hover:bg-slate-100 transition active:scale-95 shadow-sm" title="Go Back">
+          <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        </button>
+        <a id="cartBrandLink" href="index.html" class="flex items-center gap-2.5">
+          <img id="cartHeaderLogo" src="https://res.cloudinary.com/dwgvvzbvn/image/upload/v1788708839/b5fnlbs8a19t3hutx5wd.jpg" alt="Logo" class="w-8 h-8 rounded-xl object-cover border border-slate-200 shadow-sm">
+          <div>
+            <h1 class="text-sm sm:text-base font-black text-slate-900 flex items-center gap-1.5 leading-tight">
+              <span id="cartStoreTitle">Shopping Bag</span>
+              <span class="text-[10px] px-2 py-0.5 bg-black text-white rounded-full font-black" id="cartCountHeader">0</span>
+            </h1>
+            <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Style Forever</span>
+          </div>
+        </a>
+      </div>
+
+      <!-- Action -->
+      <button onclick="clearCart()" class="text-xs font-bold text-slate-400 hover:text-rose-600 transition flex items-center gap-1">
+        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+        <span class="hidden sm:inline">Empty Bag</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 flex-1 w-full">
+    
+    <!-- Empty Cart State -->
+    <div id="cartEmptyState" class="hidden text-center py-20 bg-white rounded-3xl border border-slate-200 p-8 shadow-sm max-w-md mx-auto mt-6">
+      <div class="w-16 h-16 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-200">
+        <i data-lucide="shopping-bag" class="w-8 h-8 text-slate-400"></i>
+      </div>
+      <h3 class="text-lg font-black text-slate-900 mb-1">Your shopping bag is empty</h3>
+      <p class="text-xs text-slate-500 mb-6 max-w-xs mx-auto">Explore our premium apparel, shirts, pants, and exclusive combo offers to add items to your cart.</p>
+      <button onclick="handleBackNavigation()" class="inline-flex items-center gap-2 bg-black hover:bg-neutral-800 text-white px-6 py-3 rounded-xl text-xs font-bold transition shadow-md active:scale-95">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        <span>Explore Collection</span>
+      </button>
+    </div>
+
+    <!-- Active Cart: 2-Column Responsive Layout -->
+    <div id="cartContent" class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+      
+      <!-- Left Column: Products & Combos List (lg: 7 Cols) -->
+      <div class="lg:col-span-7 xl:col-span-8 space-y-3.5" id="cartItemsList">
+        <!-- Dynamic Cart Items Rendered Here -->
+      </div>
+
+      <!-- Right Column: Order Summary & Checkout Card (lg: 5 Cols Sticky) -->
+      <div class="lg:col-span-5 xl:col-span-4 sticky top-24 space-y-4">
+        <div class="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+          
+          <h2 class="text-xs font-black uppercase tracking-wider text-slate-900 border-b border-slate-100 pb-3 flex items-center justify-between">
+            <span>Bag Summary</span>
+            <span class="text-[10px] text-slate-400 font-bold" id="summaryTotalItems">0 items</span>
+          </h2>
+
+          <div class="space-y-2.5 text-xs sm:text-sm">
+            <div class="flex justify-between text-slate-600 font-medium">
+              <span>Subtotal:</span>
+              <span class="font-bold text-black" id="subtotalPrice">BDT 0</span>
+            </div>
+            
+            <div class="flex justify-between text-slate-600 font-medium">
+              <span>Estimated Shipping:</span>
+              <span class="font-bold" id="deliveryFeeNotice">Calculated at Checkout</span>
+            </div>
+
+            <!-- Advance Payment Notice Pill -->
+            <div id="advanceRequiredNoticeWrap" class="hidden bg-purple-50 border border-purple-200 p-3 rounded-2xl text-xs font-bold text-purple-900 flex items-center justify-between">
+              <span class="flex items-center gap-1.5">
+                <i data-lucide="info" class="w-3.5 h-3.5 text-purple-600"></i>
+                <span>Advance Required:</span>
+              </span>
+              <span id="advanceNoticeAmount">BDT 0</span>
+            </div>
+
+            <!-- Free Delivery Notice -->
+            <div id="freeDeliveryNoticeWrap" class="hidden bg-emerald-50 border border-emerald-200 p-3 rounded-2xl text-xs font-bold text-emerald-800 flex items-center gap-1.5">
+              <i data-lucide="truck" class="w-4 h-4 text-emerald-600"></i>
+              <span>Your bag qualifies for FREE Delivery!</span>
+            </div>
+          </div>
+
+          <div class="border-t border-slate-100 pt-3 flex justify-between items-baseline text-base font-black text-slate-900">
+            <span>Estimated Total:</span>
+            <span class="text-lg sm:text-xl text-black" id="grandTotalPrice">BDT 0</span>
+          </div>
+
+          <button onclick="proceedToCheckout()" class="w-full bg-black hover:bg-neutral-800 text-white py-4 rounded-2xl font-black text-xs sm:text-sm tracking-wide transition active:scale-[0.99] shadow-lg flex items-center justify-center gap-2 cursor-pointer">
+            <span>Proceed to Checkout</span>
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+
+          <button onclick="handleBackNavigation()" class="w-full bg-slate-50 hover:bg-slate-100 text-slate-700 py-3 rounded-2xl font-bold text-xs transition active:scale-[0.99] flex items-center justify-center gap-1.5 border border-slate-200">
+            <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+            <span>Continue Shopping</span>
+          </button>
+
+          <!-- Safe Checkout Badge -->
+          <div class="pt-2 flex items-center justify-center gap-2 text-[11px] text-slate-400 font-semibold">
+            <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i>
+            <span>Steadfast Delivery & 100% Authentic Quality</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    let LOGO_PLACEHOLDER = "https://res.cloudinary.com/dwgvvzbvn/image/upload/v1788708839/b5fnlbs8a19t3hutx5wd.jpg";
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentShop = urlParams.get('shop') || 'styleforever';
+    const CART_STORAGE_KEY = `cart_${currentShop}`;
+
+    const homeShopUrl = `index.html?shop=${encodeURIComponent(currentShop)}`;
+    const brandLink = document.getElementById('cartBrandLink');
+    if (brandLink) brandLink.href = homeShopUrl;
+
+    function handleBackNavigation() {
+      if (document.referrer && window.history.length > 1) {
+        window.history.back();
+      } else {
+        window.location.href = homeShopUrl;
+      }
+    }
+
+    // Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyD_HBGuQSh_GzqrHqHbgdaoBikLZsK3Qqs",
+      authDomain: "new-all-f99f7.firebaseapp.com",
+      databaseURL: "https://new-all-f99f7-default-rtdb.firebaseio.com",
+      projectId: "new-all-f99f7",
+      storageBucket: "new-all-f99f7.firebasestorage.app",
+      messagingSenderId: "1069748173900",
+      appId: "1:1069748173900:web:158d6336c0f4628133c8e9"
+    };
+
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let storeSettings = {
+      storeName: 'Style Forever',
+      delInside: 60,
+      delOutside: 130
+    };
+
+    // Load Settings
+    db.ref(`stores/${currentShop}/settings`).on('value', snap => {
+      const s = snap.val();
+      if (!s) return;
+
+      storeSettings = { ...storeSettings, ...s };
+      const storeName = s.storeName || 'Style Forever';
+
+      document.title = `Shopping Bag | ${storeName}`;
+      document.getElementById('cartStoreTitle').innerText = `${storeName} Bag`;
+
+      if (s.logo) {
+        LOGO_PLACEHOLDER = s.logo;
+        document.getElementById('cartHeaderLogo').src = s.logo;
+        document.getElementById('pageFavicon').href = s.logo;
+      }
+
+      renderCart();
+    });
+
+    let cart = [];
+
+    function loadCart() {
+      cart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '[]');
+      renderCart();
+    }
+
+    function renderCart() {
+      const emptyState = document.getElementById('cartEmptyState');
+      const content = document.getElementById('cartContent');
+      const list = document.getElementById('cartItemsList');
+      const headerCount = document.getElementById('cartCountHeader');
+      const summaryItems = document.getElementById('summaryTotalItems');
+
+      const totalItems = cart.reduce((acc, it) => acc + (Number(it.quantity) || 1), 0);
+      if (headerCount) headerCount.innerText = totalItems;
+      if (summaryItems) summaryItems.innerText = `${totalItems} items`;
+
+      if (cart.length === 0) {
+        emptyState.classList.remove('hidden');
+        content.classList.add('hidden');
+        lucide.createIcons();
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      content.classList.remove('hidden');
+      list.innerHTML = '';
+
+      let subtotal = 0;
+      let totalAdvanceRequired = 0;
+      let allItemsFreeDelivery = cart.length > 0 && cart.every(it => it.isFreeDelivery);
+
+      cart.forEach((item, index) => {
+        const itemPrice = Number(item.price) || 0;
+        const itemQty = Number(item.quantity) || 1;
+        subtotal += itemPrice * itemQty;
+
+        if (item.advanceRequired) {
+          totalAdvanceRequired += (Number(item.advanceAmount) || 0) * itemQty;
+        }
+
+        const el = document.createElement('div');
+        el.className = "bg-white p-4 sm:p-5 rounded-3xl border border-slate-200/90 shadow-sm hover:border-slate-300 transition space-y-3";
+
+        // ==================== A. COMBO DEAL ITEM ====================
+        if (item.isCombo) {
+          let bundledHtml = '';
+          if (item.bundledProducts && Array.isArray(item.bundledProducts)) {
+            bundledHtml = `
+              <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-2 mt-2">
+                <span class="text-[10px] font-black uppercase tracking-wider text-slate-400 block">Items in this bundle:</span>
+                <div class="space-y-1.5">
+                  ${item.bundledProducts.map(bp => `
+                    <div class="flex items-center gap-2.5 text-xs bg-white p-2 rounded-xl border border-slate-100">
+                      <img src="${bp.imageUrl || LOGO_PLACEHOLDER}" class="w-8 h-8 rounded-lg object-cover">
+                      <div class="flex-1 min-w-0">
+                        <span class="font-bold text-slate-900 truncate block">${bp.name}</span>
+                        <span class="text-[10px] text-slate-500 font-semibold">Size: <b>${bp.selectedSize || 'Free'}</b> | Color: <b>${bp.selectedColor || '-'}</b></span>
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            `;
+          }
+
+          el.innerHTML = `
+            <div class="flex gap-3.5 items-start">
+              <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 shrink-0 relative">
+                <img src="${item.imageUrl || LOGO_PLACEHOLDER}" class="w-full h-full object-cover">
+                <span class="absolute bottom-1 right-1 bg-rose-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow">Combo</span>
+              </div>
+
+              <div class="flex-1 min-w-0">
+                <div class="flex justify-between items-start gap-2">
+                  <div>
+                    <span class="inline-block bg-rose-50 text-rose-600 text-[10px] font-black uppercase px-2 py-0.5 rounded-full border border-rose-200 mb-1">Bundle Offer</span>
+                    <h4 class="text-xs sm:text-sm font-black text-slate-900 line-clamp-1">${item.name}</h4>
+                  </div>
+                  <button onclick="removeItem(${index})" class="text-slate-400 hover:text-rose-600 p-1.5 rounded-xl hover:bg-rose-50 transition shrink-0" title="Remove Item">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                  </button>
+                </div>
+
+                <div class="flex items-baseline gap-2 mt-1">
+                  <span class="text-xs sm:text-sm font-black text-black">BDT ${itemPrice}</span>
+                  ${item.isFreeDelivery ? `<span class="text-[9px] bg-emerald-50 text-emerald-700 font-bold px-1.5 py-0.5 rounded border border-emerald-200">Free Shipping</span>` : ''}
+                </div>
+
+                <div class="flex items-center justify-between gap-3 mt-3 pt-2 border-t border-slate-100">
+                  <div class="flex items-center border border-slate-200 rounded-xl bg-slate-50 overflow-hidden">
+                    <button onclick="changeQty(${index}, -1)" class="w-8 h-8 flex items-center justify-center font-bold text-sm text-slate-700 hover:bg-slate-200 transition active:scale-95">-</button>
+                    <span class="text-xs font-black w-8 text-center select-none text-black">${itemQty}</span>
+                    <button onclick="changeQty(${index}, 1)" class="w-8 h-8 flex items-center justify-center font-bold text-sm text-slate-700 hover:bg-slate-200 transition active:scale-95">+</button>
+                  </div>
+                  <span class="text-xs font-black text-slate-900">Total: BDT ${itemPrice * itemQty}</span>
+                </div>
+              </div>
+            </div>
+            ${bundledHtml}
+          `;
+        } 
+        // ==================== B. APPAREL / SINGLE PRODUCT ITEM ====================
+        else {
+          let ruleBadges = '';
+          if (item.isFreeDelivery) {
+            ruleBadges += `<span class="text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded">Free Delivery</span>`;
+          }
+          if (item.advanceRequired) {
+            ruleBadges += `<span class="text-[9px] font-bold bg-purple-50 text-purple-700 border border-purple-200 px-1.5 py-0.5 rounded">Advance: BDT ${item.advanceAmount || 0}</span>`;
+          }
+          if (item.codEnabled === false) {
+            ruleBadges += `<span class="text-[9px] font-bold bg-rose-50 text-rose-700 border border-rose-200 px-1.5 py-0.5 rounded">No COD</span>`;
+          }
+
+          el.innerHTML = `
+            <div class="flex gap-3.5 items-center">
+              <img 
+                src="${item.imageUrl || LOGO_PLACEHOLDER}" 
+                alt="${item.name}" 
+                class="w-20 h-24 sm:w-24 sm:h-28 object-cover rounded-2xl border border-slate-200 bg-slate-50 shrink-0"
+                onerror="this.src='${LOGO_PLACEHOLDER}'"
+              >
+              <div class="flex-1 min-w-0">
+                <div class="flex justify-between items-start gap-2">
+                  <h4 class="text-xs sm:text-sm font-bold text-slate-900 line-clamp-1">${item.name}</h4>
+                  <button onclick="removeItem(${index})" class="text-slate-400 hover:text-rose-600 p-1.5 rounded-xl hover:bg-rose-50 transition shrink-0" title="Remove Item">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                  </button>
+                </div>
+                
+                <div class="flex items-baseline gap-2 mt-1">
+                  <span class="text-xs sm:text-sm font-black text-black">BDT ${itemPrice}</span>
+                  ${item.regularPrice && item.regularPrice > itemPrice ? `<span class="text-[11px] text-slate-400 font-medium line-through">BDT ${item.regularPrice}</span>` : ''}
+                </div>
+                
+                <!-- Selected Variations -->
+                <div class="flex flex-wrap items-center gap-2 mt-2">
+                  ${item.selectedSize ? `<span class="text-[10px] font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200">Size: ${item.selectedSize}</span>` : ''}
+                  ${item.selectedColor ? `<span class="text-[10px] font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200">Color: ${item.selectedColor}</span>` : ''}
+                  ${ruleBadges}
+                </div>
+
+                <div class="flex items-center justify-between gap-3 mt-3 pt-2 border-t border-slate-100">
+                  <div class="flex items-center border border-slate-200 rounded-xl bg-slate-50 overflow-hidden">
+                    <button onclick="changeQty(${index}, -1)" class="w-8 h-8 flex items-center justify-center font-bold text-sm text-slate-700 hover:bg-slate-200 transition active:scale-95">-</button>
+                    <span class="text-xs font-black w-8 text-center select-none text-black">${itemQty}</span>
+                    <button onclick="changeQty(${index}, 1)" class="w-8 h-8 flex items-center justify-center font-bold text-sm text-slate-700 hover:bg-slate-200 transition active:scale-95">+</button>
+                  </div>
+                  <span class="text-xs font-black text-slate-900">Total: BDT ${itemPrice * itemQty}</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        list.appendChild(el);
+      });
+
+      document.getElementById('subtotalPrice').innerText = `BDT ${subtotal}`;
+      document.getElementById('grandTotalPrice').innerText = `BDT ${subtotal}`;
+
+      // Update Free Delivery Banner
+      const freeDelBanner = document.getElementById('freeDeliveryNoticeWrap');
+      const delNotice = document.getElementById('deliveryFeeNotice');
+      if (allItemsFreeDelivery) {
+        freeDelBanner.classList.remove('hidden');
+        delNotice.innerHTML = `<span class="text-emerald-600 font-bold">FREE</span>`;
+      } else {
+        freeDelBanner.classList.add('hidden');
+        delNotice.innerText = `Inside ${storeSettings.delInside || 60} / Outside ${storeSettings.delOutside || 130} BDT`;
+      }
+
+      // Update Advance Notice Banner
+      const advBanner = document.getElementById('advanceRequiredNoticeWrap');
+      const advAmountEl = document.getElementById('advanceNoticeAmount');
+      if (totalAdvanceRequired > 0) {
+        advBanner.classList.remove('hidden');
+        advAmountEl.innerText = `BDT ${totalAdvanceRequired}`;
+      } else {
+        advBanner.classList.add('hidden');
+      }
+
+      lucide.createIcons();
+    }
+
+    function changeQty(index, delta) {
+      cart[index].quantity = (Number(cart[index].quantity) || 1) + delta;
+      if (cart[index].quantity <= 0) {
+        if (confirm('Do you want to remove this item from your bag?')) {
+          cart.splice(index, 1);
+        } else {
+          cart[index].quantity = 1;
+        }
+      }
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+      renderCart();
+    }
+
+    function removeItem(index) {
+      cart.splice(index, 1);
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+      renderCart();
+    }
+
+    function clearCart() {
+      if (confirm('Are you sure you want to clear your entire shopping bag?')) {
+        cart = [];
+        localStorage.removeItem(CART_STORAGE_KEY);
+        renderCart();
+      }
+    }
+
+    function proceedToCheckout() {
+      if (cart.length === 0) return;
+      window.location.href = `checkout.html?fromCart=true&shop=${encodeURIComponent(currentShop)}`;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      loadCart();
+    });
+  </script>
+</body>
+</html>
