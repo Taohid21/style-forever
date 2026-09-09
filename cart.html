@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title id="cartPageTitle">Shopping Bag</title>
+  
+  <link id="pageFavicon" rel="icon" type="image/jpeg" href="https://res.cloudinary.com/dwgvvzbvn/image/upload/v1788708839/b5fnlbs8a19t3hutx5wd.jpg">
+  
+  <!-- Studio Fonts: Plus Jakarta Sans & Space Grotesk -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"Space Grotesk"', 'monospace']
+          },
+          boxShadow: {
+            'studio': '0 20px 40px -15px rgba(0,0,0,0.06), 0 0 1px 1px rgba(0,0,0,0.04)',
+            'float': '0 12px 30px -10px rgba(0,0,0,0.08)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body { 
+      background-color: #fafafa;
+      color: #09090b;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-black selection:text-white">
+
+  <!-- ==================== MINIMALIST HEADER ==================== -->
+  <header class="bg-white/80 backdrop-blur-md border-b border-zinc-200/70 sticky top-0 z-30 transition-all">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      
+      <div class="flex items-center gap-3">
+        <button onclick="handleBackNavigation()" class="w-9 h-9 rounded-xl border border-zinc-200 bg-white flex items-center justify-center text-zinc-700 hover:text-black hover:border-zinc-400 transition active:scale-95 shadow-sm" aria-label="Go Back">
+          <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        </button>
+        <a id="cartBrandLink" href="index.html" class="flex items-center gap-2">
+          <img id="cartHeaderLogo" src="https://res.cloudinary.com/dwgvvzbvn/image/upload/v1788708839/b5fnlbs8a19t3hutx5wd.jpg" alt="Logo" class="w-7 h-7 rounded-lg object-cover border border-zinc-200">
+          <span id="cartStoreTitle" class="font-extrabold text-sm sm:text-base tracking-tight text-zinc-900">Shopping Bag</span>
+          <span id="cartCountHeader" class="text-[10px] font-mono font-bold bg-zinc-900 text-white px-2 py-0.5 rounded-full ml-1">0</span>
+        </a>
+      </div>
+
+      <button id="clearCartBtn" onclick="clearCart()" class="text-xs font-bold text-zinc-400 hover:text-rose-600 transition flex items-center gap-1.5 py-1 px-2 rounded-lg hover:bg-zinc-50">
+        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+        <span class="hidden sm:inline">Empty Bag</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ==================== MAIN CONTENT ==================== -->
+  <main class="max-w-4xl mx-auto px-4 sm:px-6 py-6 pb-24 flex-1 w-full">
+    
+    <!-- Skeleton Loader -->
+    <div id="cartSkeleton" class="space-y-4 animate-pulse">
+      <div class="h-24 bg-zinc-200/70 rounded-2xl"></div>
+      <div class="h-24 bg-zinc-200/70 rounded-2xl"></div>
+      <div class="h-40 bg-zinc-200/70 rounded-2xl mt-6"></div>
+    </div>
+
+    <!-- Empty State -->
+    <div id="cartEmptyState" class="hidden text-center py-24 bg-white rounded-3xl border border-zinc-200/80 p-8 shadow-studio max-w-sm mx-auto mt-6">
+      <div class="w-14 h-14 bg-zinc-100 text-zinc-400 rounded-2xl flex items-center justify-center mx-auto mb-3 border border-zinc-200/60">
+        <i data-lucide="shopping-bag" class="w-6 h-6 text-zinc-400"></i>
+      </div>
+      <h3 class="text-base font-extrabold text-zinc-900 mb-1">আপনার ব্যাগ খালি</h3>
+      <p class="text-xs text-zinc-400 mb-6 font-medium">Your shopping bag is currently empty.</p>
+      <button onclick="handleBackNavigation()" class="inline-flex items-center gap-2 bg-zinc-900 hover:bg-black text-white px-5 py-3 rounded-xl text-xs font-bold transition shadow-sm active:scale-95">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        <span>Start Shopping</span>
+      </button>
+    </div>
+
+    <!-- Filled Bag Grid -->
+    <div id="cartContent" class="hidden grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+      
+      <!-- Items List -->
+      <div class="md:col-span-7 space-y-3" id="cartItemsList"></div>
+
+      <!-- Order Summary Card -->
+      <div class="md:col-span-5 sticky top-24">
+        <div class="bg-white p-5 sm:p-6 rounded-2xl border border-zinc-200/80 shadow-studio space-y-4">
+          
+          <div class="flex items-center justify-between border-b border-zinc-100 pb-3">
+            <h2 class="text-sm font-extrabold text-zinc-900">অর্ডার বিবরণী</h2>
+            <span class="text-[10px] font-bold text-zinc-400 uppercase tracking-wider" id="summaryTotalItems">0 items</span>
+          </div>
+
+          <div class="space-y-2.5 text-xs">
+            <div class="flex justify-between text-zinc-500">
+              <span>Subtotal</span>
+              <span class="font-bold text-zinc-900 font-mono" id="subtotalPrice">BDT 0</span>
+            </div>
+            
+            <div class="flex justify-between text-zinc-500 items-center">
+              <span>Shipping</span>
+              <span class="text-[11px] font-medium text-zinc-400" id="deliveryFeeNotice">Calculated at checkout</span>
+            </div>
+
+            <div id="freeDeliveryNoticeWrap" class="hidden bg-emerald-50 border border-emerald-200/60 p-2.5 rounded-xl text-[11px] font-bold text-emerald-800 flex items-center gap-1.5">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5 text-emerald-600 shrink-0"></i>
+              <span>Free delivery applicable on this order</span>
+            </div>
+          </div>
+
+          <div class="border-t border-zinc-100 pt-3 flex justify-between items-baseline font-extrabold text-zinc-900">
+            <span class="text-xs">Estimated Total</span>
+            <span class="text-lg font-mono tracking-tight" id="grandTotalPrice">BDT 0</span>
+          </div>
+
+          <div class="space-y-2 pt-1">
+            <button onclick="proceedToCheckout()" class="w-full bg-zinc-900 hover:bg-black text-white py-3.5 rounded-xl font-bold text-xs sm:text-sm tracking-wide transition active:scale-[0.99] shadow-float flex items-center justify-center gap-2">
+              <span>Proceed to Checkout</span>
+              <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </button>
+
+            <button onclick="handleBackNavigation()" class="w-full bg-zinc-50 hover:bg-zinc-100 text-zinc-700 py-2.5 rounded-xl font-bold text-xs transition border border-zinc-200/70">
+              Continue Shopping
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    let LOGO_PLACEHOLDER = "https://res.cloudinary.com/dwgvvzbvn/image/upload/v1788708839/b5fnlbs8a19t3hutx5wd.jpg";
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentShop = urlParams.get('shop') || 'styleforever';
+    const CART_STORAGE_KEY = `cart_${currentShop}`;
+
+    const homeShopUrl = `index.html?shop=${encodeURIComponent(currentShop)}`;
+    const brandLink = document.getElementById('cartBrandLink');
+    if (brandLink) brandLink.href = homeShopUrl;
+
+    function handleBackNavigation() {
+      if (document.referrer && window.history.length > 1) {
+        window.history.back();
+      } else {
+        window.location.href = homeShopUrl;
+      }
+    }
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyD_HBGuQSh_GzqrHqHbgdaoBikLZsK3Qqs",
+      authDomain: "new-all-f99f7.firebaseapp.com",
+      databaseURL: "https://new-all-f99f7-default-rtdb.firebaseio.com",
+      projectId: "new-all-f99f7",
+      storageBucket: "new-all-f99f7.firebasestorage.app",
+      messagingSenderId: "1069748173900",
+      appId: "1:1069748173900:web:158d6336c0f4628133c8e9"
+    };
+
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    db.ref(`stores/${currentShop}/settings`).on('value', snap => {
+      const s = snap.val();
+      if (!s) return;
+
+      const storeName = s.storeName || 'Style Forever';
+      document.title = `Bag | ${storeName}`;
+      document.getElementById('cartStoreTitle').innerText = storeName;
+
+      if (s.logo) {
+        LOGO_PLACEHOLDER = s.logo;
+        document.getElementById('cartHeaderLogo').src = s.logo;
+        document.getElementById('pageFavicon').href = s.logo;
+      }
+    });
+
+    let cart = [];
+
+    function loadCart() {
+      // Hide skeleton
+      document.getElementById('cartSkeleton').style.display = 'none';
+      cart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '[]');
+      renderCart();
+    }
+
+    function renderCart() {
+      const emptyState = document.getElementById('cartEmptyState');
+      const content = document.getElementById('cartContent');
+      const list = document.getElementById('cartItemsList');
+      const headerCount = document.getElementById('cartCountHeader');
+      const summaryItems = document.getElementById('summaryTotalItems');
+      const clearBtn = document.getElementById('clearCartBtn');
+
+      const totalItems = cart.reduce((acc, it) => acc + (Number(it.quantity) || 1), 0);
+      if (headerCount) headerCount.innerText = totalItems;
+      if (summaryItems) summaryItems.innerText = `${totalItems} item${totalItems === 1 ? '' : 's'}`;
+
+      if (cart.length === 0) {
+        emptyState.classList.remove('hidden');
+        content.classList.add('hidden');
+        if (clearBtn) clearBtn.classList.add('hidden');
+        lucide.createIcons();
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      content.classList.remove('hidden');
+      if (clearBtn) clearBtn.classList.remove('hidden');
+      list.innerHTML = '';
+
+      let subtotal = 0;
+      let allItemsFreeDelivery = cart.length > 0 && cart.every(it => it.isFreeDelivery);
+
+      cart.forEach((item, index) => {
+        const itemPrice = Number(item.price) || 0;
+        const itemQty = Number(item.quantity) || 1;
+        subtotal += itemPrice * itemQty;
+
+        const el = document.createElement('div');
+        el.className = "bg-white p-4 rounded-2xl border border-zinc-200/80 shadow-sm transition hover:border-zinc-300";
+
+        el.innerHTML = `
+          <div class="flex gap-3.5 items-center">
+            <img 
+              src="${item.imageUrl || LOGO_PLACEHOLDER}" 
+              alt="${item.name}" 
+              class="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-xl bg-zinc-100 border border-zinc-200 shrink-0"
+              onerror="this.src='${LOGO_PLACEHOLDER}'"
+            >
+            <div class="flex-1 min-w-0">
+              <div class="flex justify-between items-start gap-2">
+                <h4 class="text-xs sm:text-sm font-bold text-zinc-900 truncate">${item.name}</h4>
+                <button onclick="removeItem(${index})" class="text-zinc-400 hover:text-zinc-900 p-1 transition shrink-0" title="Remove">
+                  <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+              </div>
+              
+              <div class="flex items-baseline gap-2 mt-0.5">
+                <span class="text-xs sm:text-sm font-mono font-extrabold text-zinc-900">BDT ${itemPrice}</span>
+                ${item.regularPrice && Number(item.regularPrice) > itemPrice ? `<span class="text-[11px] text-zinc-400 line-through font-mono">BDT ${item.regularPrice}</span>` : ''}
+              </div>
+              
+              <div class="flex flex-wrap items-center gap-1.5 mt-1.5 text-[10px] font-bold text-zinc-500">
+                ${item.selectedSize ? `<span class="bg-zinc-100 px-2 py-0.5 rounded-md text-zinc-800 uppercase tracking-wider">${item.selectedSize}</span>` : ''}
+                ${item.selectedColor ? `<span class="bg-zinc-100 px-2 py-0.5 rounded-md text-zinc-800">${item.selectedColor}</span>` : ''}
+              </div>
+
+              <div class="flex items-center justify-between gap-3 mt-3 pt-2.5 border-t border-zinc-100">
+                <div class="inline-flex items-center border border-zinc-200 rounded-lg bg-white p-0.5">
+                  <button onclick="changeQty(${index}, -1)" class="w-6 h-6 rounded flex items-center justify-center font-bold text-xs text-zinc-600 hover:bg-zinc-100 transition active:scale-95">-</button>
+                  <span class="text-xs font-bold w-7 text-center select-none text-zinc-900 font-mono">${itemQty}</span>
+                  <button onclick="changeQty(${index}, 1)" class="w-6 h-6 rounded flex items-center justify-center font-bold text-xs text-zinc-600 hover:bg-zinc-100 transition active:scale-95">+</button>
+                </div>
+                <span class="text-xs font-mono font-extrabold text-zinc-900">BDT ${itemPrice * itemQty}</span>
+              </div>
+            </div>
+          </div>
+        `;
+
+        list.appendChild(el);
+      });
+
+      document.getElementById('subtotalPrice').innerText = `BDT ${subtotal}`;
+      document.getElementById('grandTotalPrice').innerText = `BDT ${subtotal}`;
+
+      const freeDelBanner = document.getElementById('freeDeliveryNoticeWrap');
+      const delNotice = document.getElementById('deliveryFeeNotice');
+      if (allItemsFreeDelivery) {
+        freeDelBanner.classList.remove('hidden');
+        delNotice.innerHTML = `<span class="text-emerald-700 font-bold">Free</span>`;
+      } else {
+        freeDelBanner.classList.add('hidden');
+        delNotice.innerText = `Calculated at checkout`;
+      }
+
+      lucide.createIcons();
+    }
+
+    function changeQty(index, delta) {
+      cart[index].quantity = (Number(cart[index].quantity) || 1) + delta;
+      if (cart[index].quantity <= 0) {
+        cart.splice(index, 1);
+      }
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+      renderCart();
+    }
+
+    function removeItem(index) {
+      cart.splice(index, 1);
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+      renderCart();
+    }
+
+    function clearCart() {
+      cart = [];
+      localStorage.removeItem(CART_STORAGE_KEY);
+      renderCart();
+    }
+
+    function proceedToCheckout() {
+      if (cart.length === 0) return;
+      window.location.href = `checkout.html?fromCart=true&shop=${encodeURIComponent(currentShop)}`;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      loadCart();
+    });
+  </script>
+</body>
+</html>
