@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Control Panel Portal | Style Forever</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/jpeg" href="https://res.cloudinary.com/dwgvvzbvn/image/upload/v1788708839/b5fnlbs8a19t3hutx5wd.jpg">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    // ৫ ঘণ্টার সেশন ভ্যালিডেশন চেক (১৮,০০০,০০০ মিলিসেকেন্ড)
+    const SESSION_DURATION = 5 * 60 * 60 * 1000;
+    const sessionTime = localStorage.getItem('sf_admin_session_time');
+    const sessionActive = localStorage.getItem('sf_admin_session');
+
+    if (sessionActive === 'active' && sessionTime) {
+      const timePassed = Date.now() - Number(sessionTime);
+      if (timePassed < SESSION_DURATION) {
+        // ৫ ঘণ্টার মধ্যে থাকলে সরাসরি cpanel এ প্রবেশ করবে
+        window.location.replace('https://tiodisk.top/cpanel.html');
+      } else {
+        localStorage.removeItem('sf_admin_session');
+        localStorage.removeItem('sf_admin_session_time');
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #0b0f19;
+      color: #0f172a;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Ambient Background Mesh on Full PC Monitor */
+    .mesh-bg {
+      background-image: 
+        radial-gradient(at 15% 15%, rgba(0, 143, 122, 0.18) 0px, transparent 50%),
+        radial-gradient(at 85% 85%, rgba(15, 23, 42, 0.9) 0px, transparent 60%),
+        radial-gradient(at 50% 50%, rgba(20, 184, 166, 0.08) 0px, transparent 70%);
+    }
+
+    .grid-pattern {
+      background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+      background-size: 32px 32px;
+    }
+
+    /* Floating Login Card */
+    .login-card-shadow {
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(20px);
+    }
+
+    /* Shake Error Animation */
+    @keyframes elasticShake {
+      0%, 100% { transform: translateX(0); }
+      15%, 45%, 75% { transform: translateX(-8px); }
+      30%, 60%, 90% { transform: translateX(8px); }
+    }
+    .shake-anim {
+      animation: elasticShake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    }
+
+    /* Floating Ambient Aura */
+    @keyframes auraFloat {
+      0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.5; }
+      50% { transform: translate(20px, -20px) scale(1.15); opacity: 0.8; }
+    }
+    .aura-circle {
+      animation: auraFloat 8s ease-in-out infinite alternate;
+    }
+
+    /* Input Focus Glow */
+    .custom-input {
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .custom-input:focus {
+      box-shadow: 0 0 0 4px rgba(0, 143, 122, 0.15);
+      border-color: #008F7A;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between antialiased selection:bg-[#008F7A] selection:text-white mesh-bg">
+
+  <!-- Subtle Animated Grid Texture for PC Screen -->
+  <div class="fixed inset-0 grid-pattern pointer-events-none z-0"></div>
+
+  <!-- Ambient Glowing Blobs -->
+  <div class="fixed top-1/4 left-1/3 w-96 h-96 bg-[#008F7A]/20 rounded-full blur-3xl pointer-events-none aura-circle z-0"></div>
+  <div class="fixed bottom-1/4 right-1/4 w-96 h-96 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none aura-circle z-0" style="animation-delay: -3s;"></div>
+
+  <!-- Header Store Direct Link (Desktop Top Right) -->
+  <div class="w-full max-w-[1920px] mx-auto px-6 py-5 flex items-center justify-between z-10 relative">
+    <div class="flex items-center gap-2 text-white/50 text-xs font-mono">
+      <span class="w-2 h-2 rounded-full bg-[#008F7A] animate-ping"></span>
+      <span>SECURE GATEWAY</span>
+    </div>
+    <a href="https://styleforeverbd.com/" target="_blank" class="text-xs font-bold text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded-xl backdrop-blur-md transition flex items-center gap-2 group">
+      <span>Live Store</span>
+      <i data-lucide="external-link" class="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform"></i>
+    </a>
+  </div>
+
+  <!-- Main Login Container (Full PC Optimized) -->
+  <div class="flex-1 flex items-center justify-center px-4 sm:px-6 py-6 z-10 relative">
+    <div id="loginWrapper" class="w-full max-w-md bg-white/95 rounded-[32px] p-7 sm:p-10 login-card-shadow transition-all duration-300 relative border border-white/40">
+
+      <!-- Brand Logo & Aura -->
+      <div class="flex flex-col items-center text-center space-y-3 mb-7">
+        <div class="relative group">
+          <div class="absolute -inset-1 bg-gradient-to-r from-[#008F7A] to-emerald-400 rounded-3xl blur-md opacity-60 group-hover:opacity-100 transition duration-500"></div>
+          <img 
+            src="https://res.cloudinary.com/dwgvvzbvn/image/upload/v1788708839/b5fnlbs8a19t3hutx5wd.jpg" 
+            alt="Style Forever" 
+            class="relative w-20 h-20 rounded-2xl object-cover shadow-md border-2 border-white"
+          >
+        </div>
+        <div>
+          <h1 class="text-2xl font-black tracking-tight text-slate-900 mt-1">Style Forever</h1>
+          <div class="flex items-center justify-center gap-1.5 mt-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#008F7A]"></span>
+            <p id="viewSubtitle" class="text-[11px] font-mono font-bold text-slate-500 uppercase tracking-widest">Admin Control Console</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= 1. LOGIN FORM ================= -->
+      <div id="loginView">
+        <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+          
+          <!-- Success Message -->
+          <div id="successMessage" class="hidden text-center text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 py-3 px-4 rounded-2xl animate-fade-in"></div>
+
+          <!-- Error Alert -->
+          <div id="errorMessage" class="hidden text-center text-xs font-bold text-rose-600 bg-rose-50 border border-rose-200 py-3 px-4 rounded-2xl flex items-center justify-center gap-2">
+            <i data-lucide="alert-circle" class="w-4 h-4 text-rose-600"></i>
+            <span>Invalid username or password</span>
+          </div>
+
+          <!-- Username Input -->
+          <div class="space-y-1.5">
+            <label class="block text-xs font-black text-slate-700 tracking-wide" for="username">Username</label>
+            <div class="relative flex items-center">
+              <i data-lucide="user" class="w-4 h-4 text-slate-400 absolute left-4 pointer-events-none"></i>
+              <input 
+                type="text" 
+                id="username" 
+                required
+                autocomplete="username"
+                placeholder="styleforever"
+                class="custom-input w-full bg-slate-50/80 hover:bg-slate-100/60 focus:bg-white border border-slate-200 rounded-2xl pl-11 pr-4 py-3.5 text-xs sm:text-sm font-semibold text-slate-900 outline-none"
+              >
+            </div>
+          </div>
+
+          <!-- Password Input -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between">
+              <label class="block text-xs font-black text-slate-700 tracking-wide" for="password">Password</label>
+              <button 
+                type="button" 
+                onclick="showForgotView()" 
+                class="text-[11px] font-bold text-slate-400 hover:text-[#008F7A] transition"
+              >
+                Forgot Password?
+              </button>
+            </div>
+            <div class="relative flex items-center">
+              <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-4 pointer-events-none"></i>
+              <input 
+                type="password" 
+                id="password" 
+                required
+                autocomplete="current-password"
+                placeholder="••••••••"
+                class="custom-input w-full bg-slate-50/80 hover:bg-slate-100/60 focus:bg-white border border-slate-200 rounded-2xl pl-11 pr-11 py-3.5 text-xs sm:text-sm font-semibold text-slate-900 outline-none"
+              >
+              <button 
+                type="button" 
+                onclick="togglePasswordVisibility('password', 'eyeIconLogin')" 
+                tabindex="-1"
+                class="absolute right-3 text-slate-400 hover:text-slate-900 p-1.5 rounded-xl transition"
+              >
+                <i data-lucide="eye" id="eyeIconLogin" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Submit Button -->
+          <div class="pt-3">
+            <button 
+              type="submit" 
+              id="submitBtn" 
+              class="w-full bg-[#061B18] hover:bg-black active:scale-[0.98] text-white py-4 rounded-2xl text-xs font-black tracking-wider uppercase transition-all duration-200 shadow-lg shadow-black/10 flex items-center justify-center gap-2 border border-slate-800"
+            >
+              <span id="btnText">Access Console</span>
+              <div id="btnSpinner" class="hidden w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+            </button>
+          </div>
+
+        </form>
+      </div>
+
+      <!-- ================= 2. FORGOT / RESET PASSWORD FORM ================= -->
+      <div id="forgotView" class="hidden">
+        <form id="forgotForm" onsubmit="handleResetPassword(event)" class="space-y-4">
+          
+          <div class="text-center pb-2">
+            <h3 class="text-sm font-black text-slate-900">Security Verification</h3>
+            <p class="text-xs text-slate-400 font-medium mt-0.5">Provide current password to configure a new key</p>
+          </div>
+
+          <!-- Reset Error Message -->
+          <div id="resetErrorMessage" class="hidden text-center text-xs font-bold text-rose-600 bg-rose-50 border border-rose-200 py-2.5 px-4 rounded-2xl"></div>
+
+          <!-- Current Password -->
+          <div class="space-y-1.5">
+            <label class="block text-xs font-bold text-slate-700" for="oldPassword">Current Password</label>
+            <div class="relative flex items-center">
+              <input 
+                type="password" 
+                id="oldPassword" 
+                required
+                placeholder="Enter current password"
+                class="custom-input w-full bg-slate-50 focus:bg-white border border-slate-200 rounded-2xl pl-4 pr-11 py-3 text-xs sm:text-sm font-semibold text-slate-900 outline-none"
+              >
+              <button 
+                type="button" 
+                onclick="togglePasswordVisibility('oldPassword', 'eyeIconOld')" 
+                tabindex="-1"
+                class="absolute right-3.5 text-slate-400 hover:text-black p-1 transition"
+              >
+                <i data-lucide="eye" id="eyeIconOld" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- New Password -->
+          <div class="space-y-1.5">
+            <label class="block text-xs font-bold text-slate-700" for="newPassword">New Password</label>
+            <div class="relative flex items-center">
+              <input 
+                type="password" 
+                id="newPassword" 
+                required
+                placeholder="At least 4 characters"
+                class="custom-input w-full bg-slate-50 focus:bg-white border border-slate-200 rounded-2xl pl-4 pr-11 py-3 text-xs sm:text-sm font-semibold text-slate-900 outline-none"
+              >
+              <button 
+                type="button" 
+                onclick="togglePasswordVisibility('newPassword', 'eyeIconNew')" 
+                tabindex="-1"
+                class="absolute right-3.5 text-slate-400 hover:text-black p-1 transition"
+              >
+                <i data-lucide="eye" id="eyeIconNew" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Confirm New Password -->
+          <div class="space-y-1.5">
+            <label class="block text-xs font-bold text-slate-700" for="confirmPassword">Confirm Password</label>
+            <input 
+              type="password" 
+              id="confirmPassword" 
+              required
+              placeholder="Re-type new password"
+              class="custom-input w-full bg-slate-50 focus:bg-white border border-slate-200 rounded-2xl px-4 py-3 text-xs sm:text-sm font-semibold text-slate-900 outline-none"
+            >
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="pt-3 space-y-2">
+            <button 
+              type="submit" 
+              class="w-full bg-[#008F7A] hover:bg-[#005C4F] active:scale-[0.98] text-white py-3.5 rounded-2xl text-xs font-bold tracking-wide transition shadow-sm"
+            >
+              Update Credentials
+            </button>
+
+            <button 
+              type="button" 
+              onclick="showLoginView()" 
+              class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-2xl text-xs font-bold transition"
+            >
+              Cancel
+            </button>
+          </div>
+
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Ultra Sleek Luxury Footer -->
+  <footer class="py-6 text-center text-slate-500 text-xs font-mono tracking-wider z-10 relative">
+    &copy; Style Forever Workspace • Powered by tioDisk
+  </footer>
+
+  <script>
+    // ডিফল্ট ক্রেডেনশিয়াল
+    const DEFAULT_CREDENTIALS = {
+      username: "styleforever",
+      password: "style890"
+    };
+
+    function getStoredCredentials() {
+      const stored = localStorage.getItem('sf_admin_credentials');
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch (e) {
+          return DEFAULT_CREDENTIALS;
+        }
+      }
+      localStorage.setItem('sf_admin_credentials', JSON.stringify(DEFAULT_CREDENTIALS));
+      return DEFAULT_CREDENTIALS;
+    }
+
+    function togglePasswordVisibility(inputId, iconId) {
+      const input = document.getElementById(inputId);
+      const icon = document.getElementById(iconId);
+      if (!input || !icon) return;
+
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.setAttribute('data-lucide', 'eye-off');
+      } else {
+        input.type = 'password';
+        icon.setAttribute('data-lucide', 'eye');
+      }
+      lucide.createIcons();
+    }
+
+    function showForgotView() {
+      document.getElementById('loginView').classList.add('hidden');
+      document.getElementById('forgotView').classList.remove('hidden');
+      document.getElementById('viewSubtitle').innerText = "Password Recovery";
+      document.getElementById('resetErrorMessage').classList.add('hidden');
+      document.getElementById('forgotForm').reset();
+    }
+
+    function showLoginView() {
+      document.getElementById('forgotView').classList.add('hidden');
+      document.getElementById('loginView').classList.remove('hidden');
+      document.getElementById('viewSubtitle').innerText = "Admin Control Console";
+      document.getElementById('errorMessage').classList.add('hidden');
+    }
+
+    // ১. লগইন হ্যান্ডলার (cpanel.html এ রিডাইরেক্ট করবে)
+    function handleLogin(e) {
+      e.preventDefault();
+
+      const user = document.getElementById('username').value.trim();
+      const pass = document.getElementById('password').value.trim();
+      const submitBtn = document.getElementById('submitBtn');
+      const btnText = document.getElementById('btnText');
+      const btnSpinner = document.getElementById('btnSpinner');
+      const errorMsg = document.getElementById('errorMessage');
+      const successMsg = document.getElementById('successMessage');
+      const wrapper = document.getElementById('loginWrapper');
+
+      errorMsg.classList.add('hidden');
+      successMsg.classList.add('hidden');
+      wrapper.classList.remove('shake-anim');
+
+      btnText.innerText = "Verifying...";
+      btnSpinner.classList.remove('hidden');
+      submitBtn.disabled = true;
+
+      const currentCreds = getStoredCredentials();
+
+      setTimeout(() => {
+        if (user === currentCreds.username && pass === currentCreds.password) {
+          // ৫ ঘণ্টার সেশন শুরু
+          localStorage.setItem('sf_admin_session', 'active');
+          localStorage.setItem('sf_admin_session_time', Date.now().toString());
+
+          btnText.innerText = "Authorized";
+          btnSpinner.classList.add('hidden');
+          submitBtn.classList.remove('bg-[#061B18]', 'hover:bg-black');
+          submitBtn.classList.add('bg-[#008F7A]');
+
+          wrapper.style.opacity = '0';
+          wrapper.style.transform = 'scale(0.95) translateY(-10px)';
+
+          setTimeout(() => {
+            // নির্দিষ্ট গন্তব্য: cpanel.html
+            window.location.replace('https://tiodisk.top/cpanel.html');
+          }, 350);
+        } else {
+          // লগইন ফেইল
+          btnText.innerText = "Access Console";
+          btnSpinner.classList.add('hidden');
+          submitBtn.disabled = false;
+
+          errorMsg.classList.remove('hidden');
+          wrapper.classList.add('shake-anim');
+        }
+      }, 450);
+    }
+
+    // ২. পাসওয়ার্ড রিসেট হ্যান্ডলার
+    function handleResetPassword(e) {
+      e.preventDefault();
+
+      const oldPass = document.getElementById('oldPassword').value.trim();
+      const newPass = document.getElementById('newPassword').value.trim();
+      const confirmPass = document.getElementById('confirmPassword').value.trim();
+      const resetError = document.getElementById('resetErrorMessage');
+      const wrapper = document.getElementById('loginWrapper');
+
+      resetError.classList.add('hidden');
+      wrapper.classList.remove('shake-anim');
+
+      const currentCreds = getStoredCredentials();
+
+      if (oldPass !== currentCreds.password) {
+        resetError.innerText = "Incorrect current password! Verification failed.";
+        resetError.classList.remove('hidden');
+        wrapper.classList.add('shake-anim');
+        return;
+      }
+
+      if (newPass.length < 4) {
+        resetError.innerText = "New password must be at least 4 characters long.";
+        resetError.classList.remove('hidden');
+        wrapper.classList.add('shake-anim');
+        return;
+      }
+
+      if (newPass !== confirmPass) {
+        resetError.innerText = "New passwords do not match!";
+        resetError.classList.remove('hidden');
+        wrapper.classList.add('shake-anim');
+        return;
+      }
+
+      currentCreds.password = newPass;
+      localStorage.setItem('sf_admin_credentials', JSON.stringify(currentCreds));
+
+      localStorage.removeItem('sf_admin_session');
+      localStorage.removeItem('sf_admin_session_time');
+
+      showLoginView();
+
+      const successMsg = document.getElementById('successMessage');
+      successMsg.innerText = "Password updated! Please log in with your new key.";
+      successMsg.classList.remove('hidden');
+
+      document.getElementById('password').value = '';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      getStoredCredentials();
+      lucide.createIcons();
+    });
+  </script>
+</body>
+</html>
