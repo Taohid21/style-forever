@@ -296,18 +296,13 @@
             </select>
           </div>
 
-          <!-- Zone Selectors (Auto-Locked: Customer cannot manipulate manually) -->
+          <!-- Zone Selectors (Silent & Tamper-Proof) -->
           <div class="pt-1">
-            <div class="flex items-center justify-between mb-2">
-              <label class="block text-xs font-bold text-zinc-700">Delivery Zone</label>
-              <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md flex items-center gap-1">
-                <i data-lucide="sparkles" class="w-3 h-3"></i> অটো-শনাক্তকৃত
-              </span>
-            </div>
+            <label class="block text-xs font-bold text-zinc-700 mb-2">Delivery Zone</label>
 
-            <!-- pointer-events-none থাকায় কাস্টমার নিজে ক্লিক করতে পারবে না -->
+            <!-- সম্পূর্ণ ক্লিন ও মিনিমালিস্ট ডিজাইন, কাস্টমার ম্যানুয়ালি ক্লিক করে কমাতে পারবে না -->
             <div class="grid grid-cols-3 gap-2 pointer-events-none select-none">
-              <label class="flex items-center gap-2 p-2.5 border rounded-xl has-[:checked]:border-zinc-900 has-[:checked]:bg-zinc-100 transition border-zinc-200 opacity-90">
+              <label class="flex items-center gap-2 p-2.5 border rounded-xl has-[:checked]:border-zinc-900 has-[:checked]:bg-zinc-50 transition border-zinc-200">
                 <input type="radio" name="deliveryZone" value="inside" checked class="accent-zinc-900 w-3.5 h-3.5">
                 <div class="min-w-0">
                   <span class="font-bold text-zinc-900 text-[11px] block truncate">Inside Dhaka</span>
@@ -315,7 +310,7 @@
                 </div>
               </label>
 
-              <label class="flex items-center gap-2 p-2.5 border rounded-xl has-[:checked]:border-zinc-900 has-[:checked]:bg-zinc-100 transition border-zinc-200 opacity-90">
+              <label class="flex items-center gap-2 p-2.5 border rounded-xl has-[:checked]:border-zinc-900 has-[:checked]:bg-zinc-50 transition border-zinc-200">
                 <input type="radio" name="deliveryZone" value="sub" class="accent-zinc-900 w-3.5 h-3.5">
                 <div class="min-w-0">
                   <span class="font-bold text-zinc-900 text-[11px] block truncate">Sub - Urban</span>
@@ -323,19 +318,13 @@
                 </div>
               </label>
 
-              <label class="flex items-center gap-2 p-2.5 border rounded-xl has-[:checked]:border-zinc-900 has-[:checked]:bg-zinc-100 transition border-zinc-200 opacity-90">
+              <label class="flex items-center gap-2 p-2.5 border rounded-xl has-[:checked]:border-zinc-900 has-[:checked]:bg-zinc-50 transition border-zinc-200">
                 <input type="radio" name="deliveryZone" value="outside" class="accent-zinc-900 w-3.5 h-3.5">
                 <div class="min-w-0">
                   <span class="font-bold text-zinc-900 text-[11px] block truncate">Outside Dhaka</span>
                   <span class="text-zinc-500 font-mono text-[10px] block truncate" id="outsideChargeText">BDT 0</span>
                 </div>
               </label>
-            </div>
-            
-            <!-- Live Auto-Detection Badge -->
-            <div id="zoneDetectionNotice" class="text-[11px] font-semibold mt-2.5 bg-zinc-50 border border-zinc-200/80 p-2.5 rounded-xl text-zinc-600 flex items-center justify-between">
-              <span>শনাক্ত হয়েছে: <strong id="detectedZoneName" class="text-zinc-900">Inside Dhaka</strong></span>
-              <span class="text-[10px] text-zinc-400 font-normal">ঠিকানা অনুযায়ী নির্ধারিত</span>
             </div>
           </div>
 
@@ -1202,15 +1191,7 @@
         targetRadio.checked = true;
       }
 
-      const noticeLabel = document.getElementById('detectedZoneName');
-      if (noticeLabel) {
-        if (targetZone === 'inside') noticeLabel.innerText = 'Inside Dhaka (ঢাকার ভেতরে)';
-        else if (targetZone === 'sub') noticeLabel.innerText = 'Sub - Urban (ঢাকা উপশহর)';
-        else noticeLabel.innerText = 'Outside Dhaka (ঢাকার বাইরে)';
-      }
-
       updateSummaryPricing();
-      if (window.lucide) lucide.createIcons();
     }
 
     function validateStep1AndProceed() {
