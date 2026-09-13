@@ -286,7 +286,7 @@
 
           <div>
             <label class="block text-xs font-bold text-zinc-700 mb-1.5">Street Address *</label>
-            <textarea id="custAddress" oninput="detectSubUrbanAddress(this.value)" rows="2" placeholder="House, Road, Area details" class="w-full bg-zinc-50/70 border border-zinc-200 focus:border-zinc-900 focus:bg-white text-zinc-900 rounded-xl p-3 text-xs sm:text-sm outline-none font-medium transition"></textarea>
+            <textarea id="custAddress" oninput="autoDetectDeliveryZone()" rows="2" placeholder="House, Road, Thana, District details" class="w-full bg-zinc-50/70 border border-zinc-200 focus:border-zinc-900 focus:bg-white text-zinc-900 rounded-xl p-3 text-xs sm:text-sm outline-none font-medium transition"></textarea>
           </div>
 
           <div>
@@ -296,28 +296,35 @@
             </select>
           </div>
 
-          <!-- Zone Selectors -->
+          <!-- Zone Selectors (Auto-Locked: Customer cannot manipulate manually) -->
           <div class="pt-1">
-            <label class="block text-xs font-bold text-zinc-700 mb-2">Delivery Zone</label>
-            <div class="grid grid-cols-3 gap-2">
-              <label class="flex items-center gap-2 p-2.5 border rounded-xl cursor-pointer has-[:checked]:border-zinc-900 has-[:checked]:bg-zinc-50 transition border-zinc-200">
-                <input type="radio" name="deliveryZone" value="inside" checked onchange="updateSummaryPricing()" class="accent-zinc-900 w-3.5 h-3.5">
+            <div class="flex items-center justify-between mb-2">
+              <label class="block text-xs font-bold text-zinc-700">Delivery Zone</label>
+              <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md flex items-center gap-1">
+                <i data-lucide="sparkles" class="w-3 h-3"></i> অটো-শনাক্তকৃত
+              </span>
+            </div>
+
+            <!-- pointer-events-none থাকায় কাস্টমার নিজে ক্লিক করতে পারবে না -->
+            <div class="grid grid-cols-3 gap-2 pointer-events-none select-none">
+              <label class="flex items-center gap-2 p-2.5 border rounded-xl has-[:checked]:border-zinc-900 has-[:checked]:bg-zinc-100 transition border-zinc-200 opacity-90">
+                <input type="radio" name="deliveryZone" value="inside" checked class="accent-zinc-900 w-3.5 h-3.5">
                 <div class="min-w-0">
                   <span class="font-bold text-zinc-900 text-[11px] block truncate">Inside Dhaka</span>
                   <span class="text-zinc-500 font-mono text-[10px] block truncate" id="insideChargeText">BDT 0</span>
                 </div>
               </label>
 
-              <label class="flex items-center gap-2 p-2.5 border rounded-xl cursor-pointer has-[:checked]:border-zinc-900 has-[:checked]:bg-zinc-50 transition border-zinc-200">
-                <input type="radio" name="deliveryZone" value="sub" onchange="updateSummaryPricing()" class="accent-zinc-900 w-3.5 h-3.5">
+              <label class="flex items-center gap-2 p-2.5 border rounded-xl has-[:checked]:border-zinc-900 has-[:checked]:bg-zinc-100 transition border-zinc-200 opacity-90">
+                <input type="radio" name="deliveryZone" value="sub" class="accent-zinc-900 w-3.5 h-3.5">
                 <div class="min-w-0">
                   <span class="font-bold text-zinc-900 text-[11px] block truncate">Sub - Urban</span>
                   <span class="text-zinc-500 font-mono text-[10px] block truncate" id="subChargeText">BDT 100</span>
                 </div>
               </label>
 
-              <label class="flex items-center gap-2 p-2.5 border rounded-xl cursor-pointer has-[:checked]:border-zinc-900 has-[:checked]:bg-zinc-50 transition border-zinc-200">
-                <input type="radio" name="deliveryZone" value="outside" onchange="updateSummaryPricing()" class="accent-zinc-900 w-3.5 h-3.5">
+              <label class="flex items-center gap-2 p-2.5 border rounded-xl has-[:checked]:border-zinc-900 has-[:checked]:bg-zinc-100 transition border-zinc-200 opacity-90">
+                <input type="radio" name="deliveryZone" value="outside" class="accent-zinc-900 w-3.5 h-3.5">
                 <div class="min-w-0">
                   <span class="font-bold text-zinc-900 text-[11px] block truncate">Outside Dhaka</span>
                   <span class="text-zinc-500 font-mono text-[10px] block truncate" id="outsideChargeText">BDT 0</span>
@@ -325,10 +332,11 @@
               </label>
             </div>
             
-            <!-- Sub-Urban Area Info Note -->
-            <p class="text-[10px] text-zinc-500 mt-2 bg-zinc-50 p-2.5 rounded-xl border border-zinc-200/80 leading-relaxed">
-              <span class="font-bold text-zinc-800">Sub - Urban Dhaka:</span> Ashulia, Dhamrai, Keranigonj, Dohar, Hemayetpur, Keraniganj Model, Nowabganj, Savar, South Keraniganj.
-            </p>
+            <!-- Live Auto-Detection Badge -->
+            <div id="zoneDetectionNotice" class="text-[11px] font-semibold mt-2.5 bg-zinc-50 border border-zinc-200/80 p-2.5 rounded-xl text-zinc-600 flex items-center justify-between">
+              <span>শনাক্ত হয়েছে: <strong id="detectedZoneName" class="text-zinc-900">Inside Dhaka</strong></span>
+              <span class="text-[10px] text-zinc-400 font-normal">ঠিকানা অনুযায়ী নির্ধারিত</span>
+            </div>
           </div>
 
           <div>
@@ -360,10 +368,13 @@
           
           <!-- Full Payment Card -->
           <div onclick="selectPaymentMode('full')" id="optCard-full" class="p-4 border-2 rounded-2xl cursor-pointer transition flex items-center justify-between border-zinc-900 bg-zinc-50/60">
-            <div class="min-w-0 pr-2">
-              <span class="font-bold text-xs sm:text-sm text-zinc-900 block truncate">Full Online Payment</span>
-              <span class="text-[11px] text-zinc-500 block truncate">bKash, Nagad, Rocket or Bank</span>
-              <span class="text-xs font-extrabold text-zinc-900 font-mono block mt-1">Pay: <span id="fullPayDisplay">BDT 0</span></span>
+            <div class="flex items-center gap-3 min-w-0 pr-2">
+              <img src="https://thumbs.dreamstime.com/b/importtariffs-134664033.jpg" alt="Full Payment" class="w-10 h-10 rounded-xl object-cover border border-zinc-200 shrink-0">
+              <div class="min-w-0">
+                <span class="font-bold text-xs sm:text-sm text-zinc-900 block truncate">Full Online Payment</span>
+                <span class="text-[11px] text-zinc-500 block truncate">bKash, Nagad, Rocket or Bank</span>
+                <span class="text-xs font-extrabold text-zinc-900 font-mono block mt-1">Pay: <span id="fullPayDisplay">BDT 0</span></span>
+              </div>
             </div>
             <div class="w-4 h-4 rounded-full border-2 border-zinc-900 flex items-center justify-center shrink-0">
               <span class="w-2 h-2 rounded-full bg-zinc-900"></span>
@@ -372,20 +383,26 @@
 
           <!-- Advance Fee Card -->
           <div onclick="selectPaymentMode('advance')" id="optCard-advance" class="hidden p-4 border rounded-2xl cursor-pointer transition flex items-center justify-between border-zinc-200 hover:border-zinc-300">
-            <div class="min-w-0 pr-2">
-              <span class="font-bold text-xs sm:text-sm text-zinc-900 block truncate">Advance Delivery Fee</span>
-              <span class="text-[11px] text-zinc-500 block truncate">Pay advance now, balance on delivery</span>
-              <span class="text-xs font-extrabold text-emerald-700 font-mono block mt-1">Advance: <span id="advancePayDisplay">BDT 0</span></span>
+            <div class="flex items-center gap-3 min-w-0 pr-2">
+              <img src="https://img.magnific.com/premium-vector/mobile-payment-with-credit-card-secure-transactions_1096023-1401.jpg?semt=ais_hybrid&w=740&q=80" alt="Advance Payment" class="w-10 h-10 rounded-xl object-cover border border-zinc-200 shrink-0">
+              <div class="min-w-0">
+                <span class="font-bold text-xs sm:text-sm text-zinc-900 block truncate">Advance Delivery Fee</span>
+                <span class="text-[11px] text-zinc-500 block truncate">Pay advance now, balance on delivery</span>
+                <span class="text-xs font-extrabold text-emerald-700 font-mono block mt-1">Advance: <span id="advancePayDisplay">BDT 0</span></span>
+              </div>
             </div>
             <div class="w-4 h-4 rounded-full border-2 border-zinc-300 flex items-center justify-center shrink-0"></div>
           </div>
 
           <!-- COD Card -->
           <div onclick="selectPaymentMode('cod')" id="optCard-cod" class="p-4 border rounded-2xl cursor-pointer transition flex items-center justify-between border-zinc-200 hover:border-zinc-300">
-            <div class="min-w-0 pr-2">
-              <span class="font-bold text-xs sm:text-sm text-zinc-900 block truncate">Cash on Delivery (COD)</span>
-              <span class="text-[11px] text-zinc-500 block truncate">Pay entire amount upon delivery</span>
-              <span class="text-xs font-extrabold text-zinc-700 font-mono block mt-1">Pay on delivery: <span id="codPayDisplay">BDT 0</span></span>
+            <div class="flex items-center gap-3 min-w-0 pr-2">
+              <img src="https://static.vecteezy.com/system/resources/previews/072/691/611/non_2x/confirmed-payment-successfully-received-glyph-gradient-two-tone-circle-vector.jpg" alt="Cash on Delivery" class="w-10 h-10 rounded-xl object-cover border border-zinc-200 shrink-0">
+              <div class="min-w-0">
+                <span class="font-bold text-xs sm:text-sm text-zinc-900 block truncate">Cash on Delivery (COD)</span>
+                <span class="text-[11px] text-zinc-500 block truncate">Pay entire amount upon delivery</span>
+                <span class="text-xs font-extrabold text-zinc-700 font-mono block mt-1">Pay on delivery: <span id="codPayDisplay">BDT 0</span></span>
+              </div>
             </div>
             <div class="w-4 h-4 rounded-full border-2 border-zinc-300 flex items-center justify-center shrink-0"></div>
           </div>
@@ -1007,8 +1024,8 @@
         price: unitPrice,
         imageUrl: currentImg || singleProductData.imageUrl,
         isFreeDelivery: !!singleProductData.isFreeDelivery,
-        codEnabled: singleProductData.codEnabled !== false,
-        advanceRequired: !!singleProductData.advanceRequired,
+        codEnabled: singleProductData.codEnabled !== false && singleProductData.codEnabled !== 'false',
+        advanceRequired: singleProductData.advanceRequired === true || singleProductData.advanceRequired === 'true',
         selectedSize: selectedSize,
         selectedColor: selectedColor,
         quantity: singleQty
@@ -1099,36 +1116,101 @@
     }
 
     function handleDistrictChange(dist) {
-      const radioInside = document.querySelector('input[name="deliveryZone"][value="inside"]');
-      const radioOutside = document.querySelector('input[name="deliveryZone"][value="outside"]');
-      if (dist === "Dhaka") {
-        radioInside.checked = true;
-        // ঠিকানায় সাভার/আশুলিয়া থাকলে আবার সাব-আরবান নিশ্চিত করা
-        detectSubUrbanAddress(document.getElementById('custAddress').value);
-      } else if (dist !== "") {
-        radioOutside.checked = true;
-      }
-      updateSummaryPricing();
+      autoDetectDeliveryZone();
     }
 
-    // Auto-detect Sub-Urban areas from written address
-    function detectSubUrbanAddress(addr) {
-      if (!addr) return;
+    // ==================== SMART AUTO-DETECTION ENGINE (WITH TYPO TOLERANCE) ====================
+    function autoDetectDeliveryZone() {
+      const addrEl = document.getElementById('custAddress');
+      const distEl = document.getElementById('custDistrict');
+      const addrText = (addrEl ? addrEl.value : '').toLowerCase().trim();
+      const selectedDistrict = distEl ? distEl.value : '';
+
+      // ১. সাব-আরবান এলাকা ও ভুল বানানের ভ্যারিয়েশন
       const subUrbanKeywords = [
-        'ashulia', 'dhamrai', 'keranigonj', 'keraniganj', 
-        'dohar', 'hemayetpur', 'nowabganj', 'nawabganj', 'savar'
+        'savar', 'sabhar', 'shavar', 'savr', 'সাভার', 'ছাভার', 'সাভর',
+        'ashulia', 'asulia', 'asuliya', 'ashuliya', 'আশুলিয়া', 'আসুলিয়া', 'আশুলিয়া', 'আসুলিয়া',
+        'keranigonj', 'keraniganj', 'keranigong', 'কেরানীগঞ্জ', 'কেরানিগঞ্জ', 'কেরানগঞ্জ', 'কেরানীগন্জ',
+        'dhamrai', 'damrai', 'ধামরাই', 'দামরাই', 'dohar', 'দোহার',
+        'hemayetpur', 'hemaytpur', 'hemayet pur', 'হেমায়েতপুর', 'হেমায়েত পুর', 'হেমাএতপুর',
+        'nowabganj', 'nawabganj', 'nowabgonj', 'নবাবগঞ্জ', 'নওয়াবগঞ্জ',
+        'tongi', 'টঙ্গী', 'টঙ্গি'
       ];
-      
-      const lower = addr.toLowerCase();
-      const isSub = subUrbanKeywords.some(keyword => lower.includes(keyword));
-      
-      if (isSub) {
-        const subRadio = document.querySelector('input[name="deliveryZone"][value="sub"]');
-        if (subRadio && !subRadio.checked) {
-          subRadio.checked = true;
-          updateSummaryPricing();
+
+      // ২. ঢাকার ভেতরের প্রধান প্রধান এলাকা ও থানা
+      const insideDhakaKeywords = [
+        'dhaka', 'dacca', 'daka', 'ঢাকা', 'ডাক্কা',
+        'mirpur', 'meerpur', 'mirpr', 'মিরপুর', 'মীরপুর',
+        'uttara', 'utara', 'uttra', 'উত্তরা', 'উতরা',
+        'dhanmondi', 'danmondi', 'ধানমন্ডি', 'ধানমণ্ডি',
+        'gulshan', 'gulsan', 'গুলশান', 'গুলসান',
+        'banani', 'বনানী', 'বনানি', 'badda', 'বাড্ডা',
+        'mohammadpur', 'mohamadpur', 'মোহাম্মদপুর', 'মোহম্মদপুর',
+        'motijheel', 'motijhil', 'মতিঝিল', 'মটিঝিল',
+        'khilgaon', 'খিলগাঁও', 'খিলগাও', 'jatrabari', 'যাত্রাবাড়ী', 'যাত্রাবাড়ি',
+        'rampura', 'রামপুরা', 'malibagh', 'malibag', 'মালিবাগ',
+        'bashundhara', 'basundhara', 'বসুন্ধরা', 'mohakhali', 'মহাখালী',
+        'farmgate', 'farmget', 'ফার্মগেট', 'tejgaon', 'তেজগাঁও',
+        'lalbagh', 'lalbag', 'লালবাগ', 'chawkbazar', 'চকবাজার',
+        'wari', 'ওয়ারী', 'agargaon', 'আগারগাঁও', 'pallabi', 'পল্লবী',
+        'cantonment', 'ক্যান্টনমেন্ট', 'kafrul', 'কাফরুল', 'shahbag', 'শাহবাগ',
+        'paltan', 'polton', 'পল্টন', 'mugda', 'মুগদা', 'demra', 'ডেমরা',
+        'shantinagar', 'santinagar', 'শান্তিনগর', 'kamrangirchar', 'কামরাঙ্গীরচর'
+      ];
+
+      // ৩. ঢাকার বাইরের ৬৩ জেলা ও শহর
+      const outsideDhakaKeywords = [
+        'chattogram', 'chittagong', 'ctg', 'চট্টগ্রাম', 'চট্রগ্রাম', 'চিটাগাং',
+        'sylhet', 'silhet', 'সিলেট', 'ছিলেত', 'rajshahi', 'রাজশাহী',
+        'khulna', 'খুলনা', 'barishal', 'barisal', 'বরিশাল',
+        'rangpur', 'রংপুর', 'mymensingh', 'ময়মনসিংহ', 'ময়মনসিংহ',
+        'comilla', 'cumilla', 'কুমিল্লা', 'gazipur', 'gajipur', 'গাজীপুর', 'গাজিপুর',
+        'narayanganj', 'narayangonj', 'নারায়ণগঞ্জ', 'নারায়নগঞ্জ',
+        'bogura', 'bogra', 'বগুড়া', 'বগুরা', 'coxs bazar', 'coxsbazar', 'কক্সবাজার',
+        'noakhali', 'নোয়াখালী', 'feni', 'ফেনী', 'tangail', 'টাঙ্গাইল',
+        'narsingdi', 'নরসিংদী', 'sirajganj', 'সিরাজগঞ্জ', 'pabna', 'পাবনা',
+        'jashore', 'jessore', 'যশোর', 'kushtia', 'কুষ্টিয়া', 'dinajpur', 'দিনাজপুর',
+        'brahmanbaria', 'b-baria', 'ব্রাহ্মণবাড়িয়া', 'বি-বাড়িয়া', 'faridpur', 'ফরিদপুর',
+        'kishoreganj', 'কিশোরগঞ্জ', 'jamalpur', 'জামালপুর', 'natore', 'নাটোর',
+        'naogaon', 'নওগাঁ', 'chandpur', 'চাঁদপুর', 'habiganj', 'হবিগঞ্জ',
+        'moulvibazar', 'মৌলভীবাজার', 'sunamganj', 'সুনামগঞ্জ', 'patuakhali', 'পটুয়াখালী'
+      ];
+
+      let targetZone = 'inside';
+
+      const isSubUrban = subUrbanKeywords.some(kw => addrText.includes(kw));
+      const isOutside = outsideDhakaKeywords.some(kw => addrText.includes(kw)) || (selectedDistrict && selectedDistrict !== 'Dhaka');
+      const isInside = insideDhakaKeywords.some(kw => addrText.includes(kw)) || selectedDistrict === 'Dhaka';
+
+      if (isSubUrban) {
+        targetZone = 'sub';
+      } else if (isOutside) {
+        targetZone = 'outside';
+      } else if (isInside) {
+        targetZone = 'inside';
+      } else {
+        // সেলারের সুরক্ষার জন্য যদি ঠিকানা অচেনা হয় তবে Outside ঢাকা বসবে
+        if (addrText.length > 5) {
+          targetZone = 'outside';
+        } else {
+          targetZone = 'inside';
         }
       }
+
+      const targetRadio = document.querySelector(`input[name="deliveryZone"][value="${targetZone}"]`);
+      if (targetRadio) {
+        targetRadio.checked = true;
+      }
+
+      const noticeLabel = document.getElementById('detectedZoneName');
+      if (noticeLabel) {
+        if (targetZone === 'inside') noticeLabel.innerText = 'Inside Dhaka (ঢাকার ভেতরে)';
+        else if (targetZone === 'sub') noticeLabel.innerText = 'Sub - Urban (ঢাকা উপশহর)';
+        else noticeLabel.innerText = 'Outside Dhaka (ঢাকার বাইরে)';
+      }
+
+      updateSummaryPricing();
+      if (window.lucide) lucide.createIcons();
     }
 
     function validateStep1AndProceed() {
@@ -1145,33 +1227,8 @@
 
     // Payment Rules
     function setupStep2PaymentOptions() {
-      const isCodAllowed = currentOrderItems.length > 0 && currentOrderItems.every(it => it.codEnabled !== false);
-      const isAdvanceEnabled = currentOrderItems.some(it => it.advanceRequired === true);
-
-      const fullCard = document.getElementById('optCard-full');
-      const codCard = document.getElementById('optCard-cod');
-      const advCard = document.getElementById('optCard-advance');
-
-      // Full Payment সবসময় দেখা যাবে
-      if (fullCard) fullCard.classList.remove('hidden');
-
-      // Cash on Delivery (COD) অ্যাডমিনে টিক থাকলে দেখাবে, না থাকলে লুকাবে
-      if (codCard) {
-        if (isCodAllowed) {
-          codCard.classList.remove('hidden');
-        } else {
-          codCard.classList.add('hidden');
-        }
-      }
-
-      // Advance Delivery Charge অ্যাডমিনে টিক থাকলে দেখাবে, না থাকলে লুকাবে
-      if (advCard) {
-        if (isAdvanceEnabled) {
-          advCard.classList.remove('hidden');
-        } else {
-          advCard.classList.add('hidden');
-        }
-      }
+      const isCodAllowed = currentOrderItems.length > 0 && currentOrderItems.every(it => it.codEnabled !== false && it.codEnabled !== 'false');
+      const isAdvanceEnabled = currentOrderItems.length > 0 && currentOrderItems.some(it => it.advanceRequired === true || it.advanceRequired === 'true');
 
       // বর্তমান অন থাকা অপশনগুলোর তালিকা
       const availableModes = ['full'];
@@ -1189,8 +1246,8 @@
     }
 
     function selectPaymentMode(mode) {
-      const isCodAllowed = currentOrderItems.length > 0 && currentOrderItems.every(it => it.codEnabled !== false);
-      const isAdvanceEnabled = currentOrderItems.some(it => it.advanceRequired === true);
+      const isCodAllowed = currentOrderItems.length > 0 && currentOrderItems.every(it => it.codEnabled !== false && it.codEnabled !== 'false');
+      const isAdvanceEnabled = currentOrderItems.length > 0 && currentOrderItems.some(it => it.advanceRequired === true || it.advanceRequired === 'true');
 
       // অ্যাডমিন থেকে বন্ধ থাকলে ক্লিক হবে না
       if (mode === 'cod' && !isCodAllowed) return;
@@ -1201,19 +1258,39 @@
     }
 
     function renderPaymentModeCards() {
+      const isCodAllowed = currentOrderItems.length > 0 && currentOrderItems.every(it => it.codEnabled !== false && it.codEnabled !== 'false');
+      const isAdvanceEnabled = currentOrderItems.length > 0 && currentOrderItems.some(it => it.advanceRequired === true || it.advanceRequired === 'true');
+
       ['full', 'advance', 'cod'].forEach(m => {
         const card = document.getElementById(`optCard-${m}`);
         if (!card) return;
+
+        // অ্যাডমিন থেকে বন্ধ থাকলে হাইড থাকবে
+        let isHidden = false;
+        if (m === 'cod' && !isCodAllowed) isHidden = true;
+        if (m === 'advance' && !isAdvanceEnabled) isHidden = true;
+
+        if (isHidden) {
+          card.classList.add('hidden');
+          return;
+        } else {
+          card.classList.remove('hidden');
+        }
+
         const circle = card.querySelector('.rounded-full.shrink-0');
 
         if (m === selectedPaymentMode) {
           card.className = "p-4 border-2 rounded-2xl cursor-pointer transition flex items-center justify-between border-zinc-900 bg-zinc-50/60";
-          circle.className = "w-4 h-4 rounded-full border-2 border-zinc-900 flex items-center justify-center shrink-0";
-          circle.innerHTML = `<span class="w-2 h-2 rounded-full bg-zinc-900"></span>`;
+          if (circle) {
+            circle.className = "w-4 h-4 rounded-full border-2 border-zinc-900 flex items-center justify-center shrink-0";
+            circle.innerHTML = `<span class="w-2 h-2 rounded-full bg-zinc-900"></span>`;
+          }
         } else {
           card.className = "p-4 border rounded-2xl cursor-pointer transition flex items-center justify-between border-zinc-200 hover:border-zinc-300";
-          circle.className = "w-4 h-4 rounded-full border-2 border-zinc-300 flex items-center justify-center shrink-0";
-          circle.innerHTML = "";
+          if (circle) {
+            circle.className = "w-4 h-4 rounded-full border-2 border-zinc-300 flex items-center justify-center shrink-0";
+            circle.innerHTML = "";
+          }
         }
       });
 
