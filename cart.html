@@ -197,9 +197,86 @@
     let cart = [];
 
     function loadCart() {
-      // Hide skeleton
-      document.getElementById('cartSkeleton').style.display = 'none';
       cart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '[]');
+      
+      // যদি আগে সেভ করা আইটেমে availableSizes না থাকে, ডাটাবেজ থেকে ফেচ করে নিয়ে আসা
+      if (cart.length > 0) {
+        db.ref(`stores/${currentShop}/products`).once('value', snap => {
+          const prods = snap.val() || {};
+          let hasUpdates = false;
+
+          cart.forEach(item => {
+            if (item.id && prods[item.id]) {
+              const p = prods[item.id];
+              if (p.sizes && (!item.availableSizes || item.availableSizes.length === 0)) {
+                item.availableSizes = p.sizes;
+                hasUpdates = true;
+              }
+              if (p.colors && (!item.availableColors || item.availableColors.length === 0)) {
+                item.availableColors = p.colors;
+                hasUpdates = true;
+              }
+              // কালার অনুযায়ী ছবি এবং সাইজ স্টক সিঙ্ক করা
+              if (p.colorImages) item.colorImages = p.colorImages;
+              if (p.sizeStock) item.sizeStock = p.sizeStock;
+            }
+          });
+
+          if (hasUpdates) {
+            localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+          }
+
+          document.getElementById('cartSkeleton').style.display = 'none';
+          renderCart();
+        }).catch(() => {
+          document.getElementById('cartSkeleton').style.display = 'none';
+          renderCart();
+        });
+      } else {
+        document.getElementById('cartSkeleton').style.display = 'none';
+        renderCart();
+      }
+    }
+
+    // কার্ট থেকে সাইজ পরিবর্তনের ফাংশন (স্টক চেকসহ)
+    function updateCartItemSize(index, newSize) {
+      if (!cart[index]) return;
+      const item = cart[index];
+
+      // নতুন সাইজের স্টক চেক করা
+      if (item.sizeStock && typeof item.sizeStock === 'object') {
+        const availableStock = Number(item.sizeStock[newSize]) || 0;
+        
+        if (availableStock <= 0) {
+          alert(`দুঃখিত, '${newSize}' সাইজটি বর্তমানে স্টকে নেই!`);
+          renderCart();
+          return;
+        }
+
+        // কার্টের কোয়ান্টিটি যদি এভেইলেবল স্টকের চেয়ে বেশি থাকে, তবে তা কমিয়ে সমান করে দেওয়া
+        if (Number(item.quantity) > availableStock) {
+          item.quantity = availableStock;
+          alert(`এই সাইজের সর্বোচ্চ ${availableStock} টি স্টক আছে, তাই পরিমাণ সামঞ্জস্য করা হলো।`);
+        }
+      }
+
+      item.selectedSize = newSize;
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+      renderCart();
+    }
+
+    // কার্ট থেকে কালার পরিবর্তনের ফাংশন (কালারের ছবি সিঙ্কসহ)
+    function updateCartItemColor(index, newColor) {
+      if (!cart[index]) return;
+      const item = cart[index];
+      item.selectedColor = newColor;
+
+      // যদি ওই কালারের আলাদা ছবি ডাটাবেজে থাকে তবে ইমেজ আপডেট করা
+      if (item.colorImages && item.colorImages[newColor] && item.colorImages[newColor].length > 0) {
+        item.imageUrl = item.colorImages[newColor][0];
+      }
+
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
       renderCart();
     }
 
@@ -260,9 +337,30 @@
                 ${item.regularPrice && Number(item.regularPrice) > itemPrice ? `<span class="text-[11px] text-zinc-400 line-through font-mono">BDT ${item.regularPrice}</span>` : ''}
               </div>
               
-              <div class="flex flex-wrap items-center gap-1.5 mt-1.5 text-[10px] font-bold text-zinc-500">
-                ${item.selectedSize ? `<span class="bg-zinc-100 px-2 py-0.5 rounded-md text-zinc-800 uppercase tracking-wider">${item.selectedSize}</span>` : ''}
-                ${item.selectedColor ? `<span class="bg-zinc-100 px-2 py-0.5 rounded-md text-zinc-800">${item.selectedColor}</span>` : ''}
+              <!-- Dynamic Size & Color Selectors directly in Cart -->
+              <div class="flex flex-wrap items-center gap-2 mt-2">
+                ${item.availableSizes && item.availableSizes.length > 0 ? `
+                  <div class="flex items-center gap-1 bg-zinc-50 border border-zinc-200/90 rounded-lg px-2 py-1">
+                    <span class="text-[10px] font-bold text-zinc-400 uppercase">Size:</span>
+                    <select onchange="updateCartItemSize(${index}, this.value)" class="text-xs font-bold text-zinc-900 bg-transparent outline-none cursor-pointer">
+                      ${item.availableSizes.map(s => {
+                        const sVal = typeof s === 'object' ? s.size : s;
+                        const szStock = (item.sizeStock && typeof item.sizeStock === 'object' && item.sizeStock[sVal] !== undefined) ? Number(item.sizeStock[sVal]) : null;
+                        const isOut = szStock !== null && szStock <= 0;
+                        return `<option value="${sVal}" ${sVal === item.selectedSize ? 'selected' : ''} ${isOut ? 'disabled class="text-zinc-400"' : ''}>${sVal} ${isOut ? '(Stock Out)' : ''}</option>`;
+                      }).join('')}
+                    </select>
+                  </div>
+                ` : (item.selectedSize ? `<span class="bg-zinc-100 border border-zinc-200/60 px-2 py-1 rounded-lg text-zinc-800 text-[10px] font-bold uppercase tracking-wider">Size: ${item.selectedSize}</span>` : '')}
+
+                ${item.availableColors && item.availableColors.length > 0 ? `
+                  <div class="flex items-center gap-1 bg-zinc-50 border border-zinc-200/90 rounded-lg px-2 py-1">
+                    <span class="text-[10px] font-bold text-zinc-400 uppercase">Color:</span>
+                    <select onchange="updateCartItemColor(${index}, this.value)" class="text-xs font-bold text-zinc-900 bg-transparent outline-none cursor-pointer">
+                      ${item.availableColors.map(c => `<option value="${c}" ${c === item.selectedColor ? 'selected' : ''}>${c}</option>`).join('')}
+                    </select>
+                  </div>
+                ` : (item.selectedColor ? `<span class="bg-zinc-100 border border-zinc-200/60 px-2 py-1 rounded-lg text-zinc-800 text-[10px] font-bold">Color: ${item.selectedColor}</span>` : '')}
               </div>
 
               <div class="flex items-center justify-between gap-3 mt-3 pt-2.5 border-t border-zinc-100">
@@ -297,8 +395,22 @@
     }
 
     function changeQty(index, delta) {
-      cart[index].quantity = (Number(cart[index].quantity) || 1) + delta;
-      if (cart[index].quantity <= 0) {
+      const item = cart[index];
+      let maxStock = 999;
+
+      if (item.sizeStock && item.selectedSize && typeof item.sizeStock === 'object') {
+        maxStock = Number(item.sizeStock[item.selectedSize]) || 0;
+      }
+
+      const currentQty = Number(item.quantity) || 1;
+
+      if (delta > 0 && currentQty >= maxStock) {
+        alert(`এই সাইজের সর্বোচ্চ ${maxStock} টি স্টক এভেইলেবল আছে।`);
+        return;
+      }
+
+      item.quantity = currentQty + delta;
+      if (item.quantity <= 0) {
         cart.splice(index, 1);
       }
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
