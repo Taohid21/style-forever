@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title id="checkoutPageTitle">Checkout</title>
+  
+  <link id="pageFavicon" rel="icon" type="image/jpeg" href="https://res.cloudinary.com/dwgvvzbvn/image/upload/v1788708839/b5fnlbs8a19t3hutx5wd.jpg">
+  
+  <meta property="og:type" content="website">
+  <meta property="og:title" id="ogTitle" content="Order Online Now">
+  <meta property="og:description" id="ogDescription" content="ক্যাশ অন ডেলিভারিতে অর্ডার করতে ক্লিক করুন। দ্রুততম ডেলিভারি ও সেরা মানের নিশ্চয়তা।">
+  <meta property="og:image" id="ogImage" content="https://res.cloudinary.com/dwgvvzbvn/image/upload/v1788708839/b5fnlbs8a19t3hutx5wd.jpg">
+
+  <!-- Preconnects & Fonts -->
+  <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
+  <link rel="preconnect" href="https://new-all-f99f7-default-rtdb.firebaseio.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"Space Grotesk"', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body { 
+      background-color: #fafafa;
+      color: #09090b;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    .studio-img-wrapper {
+      position: relative;
+      overflow: hidden;
+      cursor: crosshair;
+      user-select: none;
+      touch-action: pan-y;
+    }
+    .studio-img-wrapper img {
+      will-change: transform;
+      transition: transform 0.15s ease-out;
+      transform-origin: 50% 50%;
+    }
+    .studio-img-wrapper.is-zoomed img {
+      transform: scale(2.4);
+      cursor: zoom-out;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-black selection:text-white">
+
+  <!-- Header -->
+  <header class="bg-white/80 backdrop-blur-md border-b border-zinc-200 sticky top-0 z-40 transition-all">
+    <div class="max-w-6xl mx-auto px-4 sm:px-8 h-16 sm:h-20 flex items-center justify-between">
+      <button onclick="handleSmartBack()" class="w-9 h-9 rounded-xl border border-zinc-200 bg-white flex items-center justify-center text-zinc-700 hover:text-black hover:border-zinc-400 transition active:scale-95 shadow-sm">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+      </button>
+      
+      <a id="headerHomeLink" href="index.html" class="flex items-center gap-2.5 min-w-0">
+        <div class="w-8 h-8 rounded-xl bg-zinc-100 border border-zinc-200 overflow-hidden flex items-center justify-center shrink-0">
+          <img id="headerLogo" src="https://res.cloudinary.com/dwgvvzbvn/image/upload/v1788708839/b5fnlbs8a19t3hutx5wd.jpg" alt="Logo" class="w-full h-full object-cover">
+        </div>
+        <span id="headerStoreName" class="font-extrabold text-sm sm:text-base tracking-tight text-zinc-900 uppercase truncate max-w-[180px] sm:max-w-xs">Style Forever</span>
+      </a>
+
+      <div class="w-9"></div>
+    </div>
+  </header>
+
+  <!-- SCREEN 1: PRODUCT SHOWCASE -->
+  <main id="screen-product" class="flex-1 max-w-6xl mx-auto w-full px-0 sm:px-6 md:px-8 py-0 sm:py-6 md:py-10 pb-28 md:pb-16">
+    <div id="productLoadingBox" class="w-full aspect-[4/5] sm:aspect-square md:aspect-[4/5] bg-zinc-100 animate-pulse flex items-center justify-center">
+      <div class="w-8 h-8 border-2 border-zinc-300 border-t-zinc-900 rounded-full animate-spin"></div>
+    </div>
+
+    <div id="productMainContent" class="hidden grid grid-cols-1 md:grid-cols-12 gap-0 md:gap-10 lg:gap-14 items-start">
+      <!-- Image Gallery with Zoom -->
+      <div class="md:col-span-6 lg:col-span-7 space-y-3 md:sticky md:top-24">
+        <div class="studio-img-wrapper w-full aspect-[4/5] sm:aspect-[1/1] md:aspect-[4/5] bg-zinc-100 md:rounded-2xl border-b md:border border-zinc-200 overflow-hidden relative" id="studioImgBox">
+          <img id="pShowcaseImage" src="" alt="Product Showcase" fetchpriority="high" decoding="async" class="w-full h-full object-cover object-top select-none pointer-events-none">
+          <div id="zoomBadge" class="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md text-white text-[10px] font-semibold px-2.5 py-1 rounded-full flex items-center gap-1 shadow pointer-events-none transition-opacity">
+            <i data-lucide="zoom-in" class="w-3.5 h-3.5"></i>
+            <span>ট্যাপ করে জুম করুন</span>
+          </div>
+        </div>
+
+        <div id="galleryThumbnailsContainer" class="hidden flex gap-2.5 overflow-x-auto px-4 md:px-0 py-1 no-scrollbar"></div>
+      </div>
+
+      <!-- Details & Actions -->
+      <div class="md:col-span-6 lg:col-span-5 px-4 sm:px-0 pt-4 md:pt-0 space-y-4">
+        <!-- Title & Price (Naturals Theme) -->
+        <div class="border-b border-zinc-100 pb-3">
+          <h1 id="pShowcaseTitle" class="text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight leading-snug"></h1>
+          
+          <!-- Rating Tab / Link -->
+          <button type="button" onclick="scrollToReviewsSection()" class="flex items-center gap-2 mt-2 group cursor-pointer text-left">
+            <div class="flex text-amber-400 text-sm">★★★★<span class="text-zinc-300">★</span></div>
+            <span id="pRatingAverage" class="text-xs font-bold text-zinc-800">4.9</span>
+            <span id="pReviewsClickableText" class="text-xs text-zinc-500 font-medium group-hover:text-[#008a44] group-hover:underline transition underline-offset-2">
+              (<span id="pHeaderReviewCount">0</span> রিভিউ দেখুন)
+            </span>
+          </button>
+
+          <!-- Deep Green Price -->
+          <div class="flex items-baseline gap-3 mt-3">
+            <span id="pShowcasePrice" class="text-2xl sm:text-3xl font-black text-[#008a44] tracking-tight">৳0</span>
+            <span id="pShowcaseOldPrice" class="text-base font-semibold text-zinc-400 line-through"></span>
+          </div>
+        </div>
+
+        <!-- Color Variant -->
+        <div id="colorsWrap" class="hidden space-y-2">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-bold text-zinc-900">কালার বাছাই করুন:</span>
+            <span id="selectedColorNameText" class="text-zinc-500 font-semibold"></span>
+          </div>
+          <div id="colorsList" class="flex flex-wrap gap-2"></div>
+        </div>
+
+        <!-- Size Variant -->
+        <div id="sizesWrap" class="hidden space-y-2">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-bold text-zinc-900">সাইজ নির্ধারণ করুন:</span>
+            <span id="selectedSizeStockText" class="font-medium"></span>
+          </div>
+          <div id="sizesList" class="flex flex-wrap gap-2"></div>
+        </div>
+
+        <!-- Quantity -->
+        <div class="flex items-center justify-between py-2.5 border-y border-zinc-200">
+          <span class="text-xs font-bold text-zinc-900">পরিমাণ (Quantity)</span>
+          <div class="inline-flex items-center border border-zinc-300 rounded-xl bg-white p-1">
+            <button type="button" onclick="changeQty(-1)" class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-zinc-600 hover:bg-zinc-100 active:scale-95 transition">-</button>
+            <span id="qtyCount" class="w-10 text-center text-xs font-black text-zinc-900 select-none font-mono">1</span>
+            <button type="button" onclick="changeQty(1)" class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-zinc-600 hover:bg-zinc-100 active:scale-95 transition">+</button>
+          </div>
+        </div>
+
+        <!-- Screenshot-style Buttons (Stacked) -->
+        <div class="space-y-2.5 pt-2">
+          <button id="desktopAddToCartBtn" type="button" onclick="addProductToCart()" class="w-full bg-white hover:bg-emerald-50 text-[#008a44] border-2 border-[#008a44] py-3.5 rounded-xl font-bold text-sm transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer shadow-sm">
+            <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+            <span>Add to Cart</span>
+          </button>
+          
+          <button id="desktopCheckoutBtn" type="button" onclick="startCheckoutWizard()" class="w-full bg-[#008a44] hover:bg-[#007439] text-white py-3.5 rounded-xl font-bold text-sm tracking-wide transition active:scale-95 flex items-center justify-center gap-2 shadow-md cursor-pointer">
+            <span>Buy Now</span>
+          </button>
+
+          <a id="btnProductWaOrder" href="#" target="_blank" class="w-full bg-white hover:bg-emerald-50 text-[#008a44] border border-[#008a44] py-3 rounded-xl font-bold text-xs transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer shadow-xs">
+            <span>WhatsApp Us to Order</span>
+          </a>
+        </div>
+
+        <!-- Product Description Dropdown -->
+        <div id="pDescriptionWrap" class="mt-4 border border-zinc-200 rounded-xl overflow-hidden hidden bg-zinc-50">
+          <button type="button" onclick="toggleAccordion('descContentBox', 'descToggleIcon')" class="w-full p-3.5 flex items-center justify-between text-left hover:bg-zinc-100 transition cursor-pointer select-none">
+            <span class="text-xs font-bold text-zinc-900 tracking-wide">প্রোডাক্ট বিবরণ ও বিস্তারিত</span>
+            <i data-lucide="chevron-down" id="descToggleIcon" class="w-4 h-4 text-zinc-500 transition-transform duration-200"></i>
+          </button>
+          <div id="descContentBox" class="hidden px-4 pb-4 pt-2 text-xs text-zinc-600 leading-relaxed whitespace-pre-line border-t border-zinc-200 bg-white">
+            <p id="pShowcaseDescription"></p>
+          </div>
+        </div>
+
+        <!-- Reviews Dropdown Section (Hidden by default until clicked) -->
+        <div id="productReviewsSection" class="border border-zinc-200 rounded-xl overflow-hidden bg-zinc-50 scroll-mt-24">
+          <button type="button" id="reviewsAccordionBtn" onclick="toggleAccordion('reviewsContentBox', 'reviewsToggleIcon')" class="w-full p-3.5 flex items-center justify-between text-left hover:bg-zinc-100 transition cursor-pointer select-none">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold text-zinc-900 tracking-wide">গ্রাহকদের রিভিউ ও রেটিং</span>
+              <span id="reviewCountBadge" class="text-[10px] font-mono bg-zinc-200 text-zinc-800 px-2 py-0.5 rounded-full font-bold">0</span>
+            </div>
+            <i data-lucide="chevron-down" id="reviewsToggleIcon" class="w-4 h-4 text-zinc-500 transition-transform duration-200"></i>
+          </button>
+          <div id="reviewsContentBox" class="hidden px-4 pb-4 pt-3 border-t border-zinc-200 bg-white space-y-4">
+            <!-- Review Form -->
+            <div class="bg-zinc-50 p-3 rounded-xl border border-zinc-200 space-y-2.5">
+              <span class="text-xs font-bold text-zinc-800 block">আপনার মতামত দিন:</span>
+              <div class="grid grid-cols-2 gap-2">
+                <input type="text" id="revAuthor" placeholder="আপনার নাম" class="bg-white border border-zinc-200 p-2 rounded-lg text-xs outline-none">
+                <select id="revRating" class="bg-white border border-zinc-200 p-2 rounded-lg text-xs outline-none font-bold">
+                  <option value="5">⭐⭐⭐⭐⭐ (৫ স্টার)</option>
+                  <option value="4">⭐⭐⭐⭐ (৪ স্টার)</option>
+                  <option value="3">⭐⭐⭐ (৩ স্টার)</option>
+                  <option value="2">⭐⭐ (২ স্টার)</option>
+                  <option value="1">⭐ (১ স্টার)</option>
+                </select>
+              </div>
+              <textarea id="revComment" rows="2" placeholder="প্রোডাক্টটি কেমন লেগেছে লিখুন..." class="w-full bg-white border border-zinc-200 p-2 rounded-lg text-xs outline-none"></textarea>
+              <button type="button" onclick="submitProductReview()" class="w-full bg-zinc-900 hover:bg-black text-white py-2 rounded-lg text-xs font-bold transition">রিভিউ সাবমিট করুন</button>
+            </div>
+
+            <!-- Reviews List -->
+            <div id="reviewsListContainer" class="space-y-3 max-h-60 overflow-y-auto no-scrollbar">
+              <p class="text-[11px] text-zinc-400 text-center py-2">কোনো রিভিউ এখনো দেওয়া হয়নি।</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- WhatsApp & Messenger Connect -->
+        <div class="my-5 flex items-center gap-3">
+          <div class="flex-1 h-px bg-zinc-200"></div>
+          <div class="flex items-center gap-2.5">
+            <a id="btnChatWa" href="https://wa.me/8801989662768" target="_blank" class="w-8 h-8 rounded-full border border-zinc-200 hover:border-emerald-500 bg-white hover:bg-emerald-50 flex items-center justify-center transition active:scale-90" title="WhatsApp Chat">
+              <svg class="w-4 h-4 fill-[#25D366]" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+            </a>
+            <a id="btnChatMsg" href="https://m.me/" target="_blank" class="w-8 h-8 rounded-full border border-zinc-200 hover:border-blue-500 bg-white hover:bg-blue-50 flex items-center justify-center transition active:scale-90" title="Messenger Chat">
+              <svg class="w-4 h-4 fill-[#0084FF]" viewBox="0 0 24 24"><path d="M12 0C5.373 0 0 4.974 0 11.111c0 3.498 1.744 6.614 4.469 8.654V24l4.088-2.242c1.092.302 2.246.464 3.443.464 6.627 0 12-4.975 12-11.111C24 4.974 18.627 0 12 0zm1.191 14.963l-3.056-3.259-5.963 3.259 6.559-6.963 3.13 3.259 5.89-3.259-6.56 6.963z"/></svg>
+            </a>
+          </div>
+          <div class="flex-1 h-px bg-zinc-200"></div>
+        </div>
+
+        <!-- Dynamic Policies & FAQ Section -->
+        <div id="dynamicPoliciesSection" class="space-y-2 text-xs pt-1">
+          <div class="border border-zinc-200 rounded-xl overflow-hidden bg-zinc-50">
+            <button type="button" onclick="toggleAccordion('contentPolicyDelivery', this.querySelector('i'))" class="w-full p-3 flex items-center justify-between font-bold text-zinc-800 hover:bg-zinc-100 text-left transition select-none">
+              <span>Delivery & Shipping Policy</span>
+              <i data-lucide="chevron-down" class="w-4 h-4 text-zinc-400 transition-transform duration-200"></i>
+            </button>
+            <div id="contentPolicyDelivery" class="hidden p-3.5 bg-white text-zinc-600 border-t border-zinc-200 leading-relaxed whitespace-pre-line"></div>
+          </div>
+
+          <div class="border border-zinc-200 rounded-xl overflow-hidden bg-zinc-50">
+            <button type="button" onclick="toggleAccordion('contentPolicyReturn', this.querySelector('i'))" class="w-full p-3 flex items-center justify-between font-bold text-zinc-800 hover:bg-zinc-100 text-left transition select-none">
+              <span>Return & Exchange Policy</span>
+              <i data-lucide="chevron-down" class="w-4 h-4 text-zinc-400 transition-transform duration-200"></i>
+            </button>
+            <div id="contentPolicyReturn" class="hidden p-3.5 bg-white text-zinc-600 border-t border-zinc-200 leading-relaxed whitespace-pre-line"></div>
+          </div>
+
+          <div id="dynamicFaqContainer" class="space-y-2"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Related Products -->
+    <div id="relatedProductsWrap" class="mt-10 pt-6 border-t border-zinc-200 px-4 sm:px-0 hidden overflow-hidden">
+      <div class="flex items-center justify-between mb-3.5">
+        <div>
+          <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block">Explore More</span>
+          <h3 class="text-base sm:text-lg font-extrabold tracking-tight text-zinc-900">You May Also Like</h3>
+        </div>
+      </div>
+      <div id="relatedProductsList" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5 sm:gap-4"></div>
+    </div>
+
+    <!-- Mobile Sticky Bar (Clean Minimalist Green) -->
+    <div id="stickyOrderBar" class="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-zinc-200 px-4 py-2.5 shadow-xl">
+      <div class="flex items-center justify-between gap-3 max-w-md mx-auto">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <img id="stickyThumbImg" src="" class="w-10 h-10 object-cover rounded-lg border border-zinc-200 shrink-0 bg-zinc-50">
+          <div class="min-w-0">
+            <span id="stickyBottomTitle" class="text-xs font-bold text-zinc-900 block truncate leading-tight">Product</span>
+            <span id="stickyBottomPrice" class="text-sm font-black text-[#008a44] block">৳0</span>
+          </div>
+        </div>
+        <button id="mobileCheckoutBtn" type="button" onclick="startCheckoutWizard()" class="bg-[#008a44] hover:bg-[#007439] text-white py-2.5 px-6 rounded-xl font-bold text-xs uppercase tracking-wider transition active:scale-95 flex items-center gap-1.5 shadow shrink-0">
+          <i data-lucide="shopping-cart" class="w-3.5 h-3.5"></i>
+          <span>Buy Now</span>
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- SCREEN 2: 1-PAGE EXPRESS CHECKOUT -->
+  <main id="screen-checkout" class="hidden flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 md:px-8 py-6 pb-24">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <!-- Left: Customer Info & Payment -->
+      <div class="lg:col-span-7 space-y-5">
+        <!-- Delivery Form -->
+        <div class="bg-white border border-zinc-200 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
+          <div class="flex items-center justify-between border-b border-zinc-100 pb-3">
+            <h2 class="text-sm font-extrabold text-zinc-900 flex items-center gap-2">
+              <i data-lucide="map-pin" class="w-4 h-4 text-zinc-600"></i>
+              <span>Delivery Information</span>
+            </h2>
+          </div>
+
+          <div class="space-y-3.5 text-xs">
+            <div>
+              <label class="block font-bold text-zinc-700 mb-1.5">আপনার নাম *</label>
+              <input type="text" id="custName" placeholder="সম্পূর্ণ নাম লিখুন" class="w-full bg-zinc-50 border border-zinc-200 focus:border-zinc-900 focus:bg-white text-zinc-900 rounded-xl p-3 outline-none font-medium transition">
+            </div>
+
+            <div>
+              <label class="block font-bold text-zinc-700 mb-1.5">মোবাইল নম্বর (১১ ডিজিট) *</label>
+              <input type="tel" id="custPhone" placeholder="01XXXXXXXXX" class="w-full bg-zinc-50 border border-zinc-200 focus:border-zinc-900 focus:bg-white text-zinc-900 rounded-xl p-3 outline-none font-mono font-medium transition">
+            </div>
+
+            <div>
+              <label class="block font-bold text-zinc-700 mb-1.5">সম্পূর্ণ ঠিকানা *</label>
+              <textarea id="custAddress" oninput="autoDetectDeliveryZone()" rows="2" placeholder="বাসা/হোল্ডিং নং, রোড, থানা, জেলা বিস্তারিত লিখুন..." class="w-full bg-zinc-50 border border-zinc-200 focus:border-zinc-900 focus:bg-white text-zinc-900 rounded-xl p-3 outline-none font-medium transition"></textarea>
+            </div>
+
+            <div>
+              <label class="block font-bold text-zinc-700 mb-1.5">জেলা (ঐচ্ছিক)</label>
+              <select id="custDistrict" onchange="autoDetectDeliveryZone()" class="w-full bg-zinc-50 border border-zinc-200 focus:border-zinc-900 focus:bg-white text-zinc-900 rounded-xl p-3 outline-none font-medium transition cursor-pointer">
+                <option value="">Select District</option>
+              </select>
+            </div>
+
+            <!-- Delivery Zone -->
+            <div class="pt-1">
+              <label class="block font-bold text-zinc-700 mb-2">Delivery Zone</label>
+              <div class="grid grid-cols-3 gap-2 select-none">
+                <label class="flex items-center gap-2 p-2.5 border rounded-xl has-[:checked]:border-zinc-900 has-[:checked]:bg-zinc-50 border-zinc-200 cursor-pointer transition">
+                  <input type="radio" name="deliveryZone" value="inside" onchange="updateSummaryPricing()" checked class="accent-zinc-900 w-3.5 h-3.5 cursor-pointer">
+                  <div class="min-w-0">
+                    <span class="font-bold text-zinc-900 text-[11px] block truncate">Inside Dhaka</span>
+                    <span class="text-zinc-500 font-mono text-[10px] block truncate" id="insideChargeText">BDT 60</span>
+                  </div>
+                </label>
+
+                <label class="flex items-center gap-2 p-2.5 border rounded-xl has-[:checked]:border-zinc-900 has-[:checked]:bg-zinc-50 border-zinc-200 cursor-pointer transition">
+                  <input type="radio" name="deliveryZone" value="sub" onchange="updateSummaryPricing()" class="accent-zinc-900 w-3.5 h-3.5 cursor-pointer">
+                  <div class="min-w-0">
+                    <span class="font-bold text-zinc-900 text-[11px] block truncate">Sub - Urban</span>
+                    <span class="text-zinc-500 font-mono text-[10px] block truncate" id="subChargeText">BDT 100</span>
+                  </div>
+                </label>
+
+                <label class="flex items-center gap-2 p-2.5 border rounded-xl has-[:checked]:border-zinc-900 has-[:checked]:bg-zinc-50 border-zinc-200 cursor-pointer transition">
+                  <input type="radio" name="deliveryZone" value="outside" onchange="updateSummaryPricing()" class="accent-zinc-900 w-3.5 h-3.5 cursor-pointer">
+                  <div class="min-w-0">
+                    <span class="font-bold text-zinc-900 text-[11px] block truncate">Outside Dhaka</span>
+                    <span class="text-zinc-500 font-mono text-[10px] block truncate" id="outsideChargeText">BDT 130</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-bold text-zinc-700 mb-1.5">অর্ডার নোট (ঐচ্ছিক)</label>
+              <input type="text" id="custOrderNote" placeholder="ডেলিভারির বিশেষ নির্দেশনা থাকলে লিখুন..." class="w-full bg-zinc-50 border border-zinc-200 focus:border-zinc-900 focus:bg-white text-zinc-900 rounded-xl p-3 outline-none font-medium transition">
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment Method -->
+        <div class="bg-white border border-zinc-200 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
+          <h2 class="text-sm font-extrabold text-zinc-900 flex items-center gap-2 border-b border-zinc-100 pb-3">
+            <i data-lucide="credit-card" class="w-4 h-4 text-zinc-600"></i>
+            <span>পেমেন্ট পদ্ধতি</span>
+          </h2>
+
+          <div class="space-y-2.5" id="paymentOptionsContainer">
+            <div onclick="selectPaymentMode('cod')" id="optCard-cod" class="p-3.5 border-2 rounded-xl cursor-pointer transition flex items-center justify-between border-zinc-900 bg-zinc-50">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xs shrink-0 font-mono">COD</div>
+                <div>
+                  <span class="font-bold text-xs text-zinc-900 block">Cash on Delivery</span>
+                  <span class="text-[11px] text-zinc-500 block">পণ্য হাতে পেয়ে মূল্য পরিশোধ করুন</span>
+                </div>
+              </div>
+              <div class="w-4 h-4 rounded-full border-2 border-zinc-900 flex items-center justify-center shrink-0">
+                <span class="w-2 h-2 rounded-full bg-zinc-900"></span>
+              </div>
+            </div>
+
+            <div onclick="selectPaymentMode('full')" id="optCard-full" class="p-3.5 border rounded-xl cursor-pointer transition flex items-center justify-between border-zinc-200 bg-white hover:border-zinc-400">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-9 h-9 rounded-lg bg-zinc-900 text-white flex items-center justify-center font-bold text-xs shrink-0 font-mono">PAY</div>
+                <div>
+                  <span class="font-bold text-xs text-zinc-900 block">Online Payment</span>
+                  <span class="text-[11px] text-zinc-500 block">bKash, Nagad, Rocket</span>
+                </div>
+              </div>
+              <div class="w-4 h-4 rounded-full border-2 border-zinc-200 flex items-center justify-center shrink-0"></div>
+            </div>
+
+            <div onclick="selectPaymentMode('advance')" id="optCard-advance" class="hidden p-3.5 border rounded-xl cursor-pointer transition flex items-center justify-between border-zinc-200 bg-white hover:border-zinc-400">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-9 h-9 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-xs shrink-0 font-mono">ADV</div>
+                <div>
+                  <span class="font-bold text-xs text-zinc-900 block">Advance Delivery Fee</span>
+                  <span class="text-[11px] text-zinc-500 block">ডেলিভারি চার্জ অগ্রিম দিন</span>
+                </div>
+              </div>
+              <div class="w-4 h-4 rounded-full border-2 border-zinc-200 flex items-center justify-center shrink-0"></div>
+            </div>
+          </div>
+
+          <div id="onlinePaymentTriggerArea" class="hidden pt-2 border-t border-zinc-100">
+            <div id="pendingPaymentNotice" class="bg-zinc-50 border border-zinc-200 p-3 rounded-xl flex items-center justify-between gap-2">
+              <span class="text-xs font-bold text-zinc-900">অনলাইন পেমেন্ট ইনফরমেশন দিন</span>
+              <button type="button" onclick="openPaymentGatewayModal()" class="bg-zinc-900 hover:bg-black text-white px-3 py-1.5 rounded-lg text-xs font-bold shrink-0">
+                Enter TrxID
+              </button>
+            </div>
+            <div id="savedPaymentNotice" class="hidden bg-emerald-50 border border-emerald-200 p-3 rounded-xl flex items-center justify-between gap-2">
+              <span class="text-xs font-bold text-emerald-900 truncate" id="savedPaymentSummary">Payment Attached</span>
+              <button type="button" onclick="openPaymentGatewayModal()" class="text-emerald-800 hover:underline text-xs font-bold shrink-0">Edit</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Summary & Order Button (Sticky on PC) -->
+      <div class="lg:col-span-5 space-y-4 lg:sticky lg:top-24">
+        <div class="bg-white border border-zinc-200 rounded-2xl p-5 sm:p-6 shadow-sm space-y-4">
+          <h3 class="text-sm font-extrabold text-zinc-900 border-b border-zinc-100 pb-3 flex items-center justify-between">
+            <span>Order Summary</span>
+            <span id="orderItemCountText" class="text-xs text-zinc-400 font-normal">1 Item</span>
+          </h3>
+
+          <div id="onePageItemsList" class="space-y-2.5 max-h-72 overflow-y-auto no-scrollbar pr-1"></div>
+
+          <div class="space-y-2 text-xs border-t border-zinc-100 pt-3 text-zinc-600">
+            <div class="flex justify-between">
+              <span>Subtotal</span>
+              <span class="font-bold text-zinc-900 font-mono" id="opSubtotal">BDT 0</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Delivery Charge</span>
+              <span class="font-bold text-zinc-900 font-mono" id="opDelivery">BDT 0</span>
+            </div>
+            <div class="flex justify-between text-sm font-extrabold text-zinc-900 pt-2 border-t border-zinc-100">
+              <span>Total Amount</span>
+              <span class="font-mono text-base" id="opGrandTotal">BDT 0</span>
+            </div>
+          </div>
+
+          <button type="button" onclick="submitOnePageOrder()" id="onePageSubmitBtn" class="w-full bg-zinc-900 hover:bg-black text-white py-4 rounded-xl font-bold text-xs uppercase tracking-widest transition active:scale-[0.99] flex items-center justify-center gap-2 shadow-md cursor-pointer">
+            <i data-lucide="check-circle" class="w-4 h-4"></i>
+            <span>Confirm Order</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Payment Modal -->
+  <div id="paymentGatewayModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white w-full max-w-sm rounded-t-3xl sm:rounded-2xl border border-zinc-200 shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
+      <div class="px-5 py-4 border-b border-zinc-100 flex items-center justify-between">
+        <h3 class="text-xs font-bold text-zinc-900 uppercase tracking-wider">Online Payment</h3>
+        <button onclick="closePaymentGatewayModal()" class="w-7 h-7 rounded-lg hover:bg-zinc-100 text-zinc-400 hover:text-zinc-800 flex items-center justify-center transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-4 overflow-y-auto no-scrollbar">
+        <div class="grid grid-cols-3 gap-2">
+          <button type="button" onclick="selectGatewayChannel('bkash')" id="gwBtn-bkash" class="py-2.5 px-1 border-2 border-zinc-900 rounded-xl flex flex-col items-center justify-center gap-1 bg-zinc-50 transition">
+            <span class="text-[10px] font-extrabold text-zinc-900">bKash</span>
+          </button>
+          <button type="button" onclick="selectGatewayChannel('nagad')" id="gwBtn-nagad" class="py-2.5 px-1 border border-zinc-200 rounded-xl flex flex-col items-center justify-center gap-1 hover:border-zinc-400 transition bg-white">
+            <span class="text-[10px] font-bold text-zinc-600">Nagad</span>
+          </button>
+          <button type="button" onclick="selectGatewayChannel('rocket')" id="gwBtn-rocket" class="py-2.5 px-1 border border-zinc-200 rounded-xl flex flex-col items-center justify-center gap-1 hover:border-zinc-400 transition bg-white">
+            <span class="text-[10px] font-bold text-zinc-600">Rocket</span>
+          </button>
+        </div>
+
+        <div class="bg-zinc-50 border border-zinc-200 rounded-xl p-3.5 space-y-2">
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-zinc-500 font-medium">Account Number:</span>
+            <button type="button" onclick="copyModalNumber()" class="bg-white border border-zinc-200 px-2 py-0.5 rounded text-[11px] font-bold text-zinc-800 hover:bg-zinc-100 transition shadow-2xs">
+              <span id="copyBtnText">Copy</span>
+            </button>
+          </div>
+          <div class="font-mono text-sm font-bold text-zinc-900 bg-white p-2.5 rounded-lg border border-zinc-200 text-center tracking-wider" id="modalAccountDisplay">
+            01XXXXXXXXX
+          </div>
+          <div class="text-center text-xs font-bold text-zinc-900 pt-0.5 font-mono">
+            Amount: <span id="modalAmountToPayDisplay">BDT 0</span>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-zinc-700 mb-1">Sender Mobile Number *</label>
+            <input type="tel" id="modalSenderPhone" placeholder="01XXXXXXXXX" class="w-full bg-zinc-50 border border-zinc-200 focus:border-zinc-900 focus:bg-white text-zinc-900 rounded-xl p-3 text-xs outline-none font-mono font-medium transition">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-zinc-700 mb-1">Transaction ID (TrxID) <span class="text-zinc-400 font-normal">(Optional)</span></label>
+            <input type="text" id="modalTrxId" placeholder="e.g. 9J2K8L1P" class="w-full bg-zinc-50 border border-zinc-200 focus:border-zinc-900 focus:bg-white text-zinc-900 rounded-xl p-3 text-xs outline-none font-mono uppercase transition">
+          </div>
+        </div>
+
+        <button type="button" onclick="saveModalPaymentProof()" class="w-full bg-zinc-900 hover:bg-black text-white py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider transition active:scale-[0.99] shadow-sm">
+          Save Payment Info
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success Modal -->
+  <div id="successModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center shadow-2xl border border-zinc-100">
+      <div class="w-14 h-14 bg-zinc-900 text-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+        <i data-lucide="check" class="w-7 h-7"></i>
+      </div>
+      <h3 class="text-lg font-bold text-zinc-900 mb-1 tracking-tight uppercase">Order Confirmed!</h3>
+      <p class="text-xs text-zinc-500 leading-relaxed mb-6 font-medium">
+        Thank you for your order. We have received your request and will contact you shortly for dispatch.
+      </p>
+      <a id="successReturnLink" href="index.html" class="inline-flex items-center justify-center gap-2 w-full bg-zinc-900 hover:bg-black text-white py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition active:scale-95 shadow-sm">
+        <span>Back to Store</span>
+        <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+      </a>
+    </div>
+  </div>
+
+  <script>
+    let LOGO_PLACEHOLDER = "https://res.cloudinary.com/dwgvvzbvn/image/upload/v1788708839/b5fnlbs8a19t3hutx5wd.jpg";
+
+    function optimizeCloudinaryUrl(url, width = 700) {
+      if (!url || typeof url !== 'string') return LOGO_PLACEHOLDER;
+      if (!url.includes('cloudinary.com')) return url;
+      if (url.includes('/f_auto,q_auto')) return url;
+      return url.replace('/upload/', `/upload/f_auto,q_auto,w_${width}/`);
+    }
+
+    function getSubdomainShop() {
+      const host = window.location.hostname;
+      const parts = host.split('.');
+      if (parts.length > 2 && parts[0] !== 'www') return parts[0].toLowerCase();
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('shop') || 'styleforever';
+    }
+
+    const currentShop = getSubdomainShop();
+    const urlParams = new URLSearchParams(window.location.search);
+    const productId = urlParams.get('id');
+    const comboId = urlParams.get('combo') || urlParams.get('campaign');
+    const fromCart = urlParams.get('fromCart') === 'true';
+
+    const CART_STORAGE_KEY = `cart_${currentShop}`;
+    const isSubdomain = window.location.hostname.split('.').length > 2 && window.location.hostname.split('.')[0] !== 'www';
+    const homeShopUrl = isSubdomain ? '/' : `index.html?shop=${encodeURIComponent(currentShop)}`;
+    
+    document.getElementById('headerHomeLink').href = homeShopUrl;
+    document.getElementById('successReturnLink').href = homeShopUrl;
+
+    const BD_DISTRICTS = [
+      "Dhaka", "Chattogram", "Gazipur", "Narayanganj", "Cumilla", "Sylhet", "Rajshahi", "Bogura", 
+      "Khulna", "Barishal", "Mymensingh", "Rangpur", "Dinajpur", "Jashore", "Cox's Bazar", "Brahmanbaria", 
+      "Noakhali", "Feni", "Lakshmipur", "Chandpur", "Habiganj", "Moulvibazar", "Sunamganj", "Narsingdi", 
+      "Munshiganj", "Manikganj", "Tangail", "Kishoreganj", "Netrokona", "Jamalpur", "Sherpur", "Faridpur", 
+      "Gopalganj", "Madaripur", "Shariatpur", "Rajbari", "Pabna", "Sirajganj", "Natore", "Naogaon", 
+      "Chapainawabganj", "Joypurhat", "Gaibandha", "Kurigram", "Lalmonirhat", "Nilphamari", "Thakurgaon", 
+      "Panchagarh", "Kushtia", "Meherpur", "Chuadanga", "Jhenaidah", "Magura", "Narail", "Bagerhat", 
+      "Satkhira", "Bhola", "Patuakhali", "Jhalokathi", "Pirojpur", "Barguna", "Bandarban", "Rangamati", "Khagrachhari"
+    ];
+
+    const distSelect = document.getElementById('custDistrict');
+    BD_DISTRICTS.forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d;
+      opt.innerText = d;
+      distSelect.appendChild(opt);
+    });
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyD_HBGuQSh_GzqrHqHbgdaoBikLZsK3Qqs",
+      authDomain: "new-all-f99f7.firebaseapp.com",
+      databaseURL: "https://new-all-f99f7-default-rtdb.firebaseio.com",
+      projectId: "new-all-f99f7",
+      storageBucket: "new-all-f99f7.firebasestorage.app",
+      messagingSenderId: "1069748173900",
+      appId: "1:1069748173900:web:158d6336c0f4628133c8e9"
+    };
+
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const PATHS = {
+      orders: `stores/${currentShop}/orders`,
+      products: `stores/${currentShop}/products`,
+      campaigns: `stores/${currentShop}/campaigns`,
+      settings: `stores/${currentShop}/settings`,
+      reviews: `stores/${currentShop}/reviews`
+    };
+
+    let storeSettings = {
+      storeName: 'Style Forever',
+      logo: LOGO_PLACEHOLDER,
+      phone: '01989662768',
+      delInside: 60,
+      delOutside: 130,
+      delSub: 100,
+      bkash: '',
+      nagad: '',
+      rocket: ''
+    };
+
+    let currentOrderItems = [];
+    let singleProductData = null;
+    let selectedSize = '';
+    let selectedColor = '';
+    let singleQty = 1;
+    let selectedPaymentMode = 'cod';
+    let selectedGateway = 'bkash';
+
+    let onlineProof = { channel: 'bkash', senderPhone: '', trxId: '' };
+
+    // Realtime Settings Sync
+    db.ref(PATHS.settings).on('value', snap => {
+      const s = snap.val();
+      if (!s) return;
+      storeSettings = { ...storeSettings, ...s };
+
+      const sName = s.storeName || 'Style Forever';
+      document.title = `Checkout | ${sName}`;
+      document.getElementById('checkoutPageTitle').innerText = `Checkout | ${sName}`;
+      document.getElementById('headerStoreName').innerText = sName;
+
+      if (s.logo) {
+        LOGO_PLACEHOLDER = s.logo;
+        document.getElementById('headerLogo').src = s.logo;
+        document.getElementById('pageFavicon').href = s.logo;
+      }
+
+      document.getElementById('insideChargeText').innerText = `BDT ${s.delInside !== undefined ? s.delInside : 60}`;
+      document.getElementById('subChargeText').innerText = `BDT ${s.delSub !== undefined ? s.delSub : 100}`;
+      document.getElementById('outsideChargeText').innerText = `BDT ${s.delOutside !== undefined ? s.delOutside : 130}`;
+
+      if (s.phone) {
+        const cleanPhone = s.phone.replace(/[^0-9]/g, '');
+        const waNum = cleanPhone.startsWith('88') ? cleanPhone : ('88' + cleanPhone);
+        const waBtn = document.getElementById('btnChatWa');
+        if (waBtn) waBtn.href = `https://wa.me/${waNum}`;
+      }
+
+      const delEl = document.getElementById('contentPolicyDelivery');
+      if (delEl) {
+        delEl.innerText = s.policyDelivery || 'ঢাকায় ২৪ থেকে ৪৮ ঘণ্টার মধ্যে এবং ঢাকার বাইরে ২ থেকে ৩ দিনের মধ্যে নিশ্চিত হোম ডেলিভারি।';
+      }
+
+      const retEl = document.getElementById('contentPolicyReturn');
+      if (retEl) {
+        retEl.innerText = s.policyReturn || 'পণ্য অপছন্দ হলে ডেলিভারিম্যানের সামনে চেক করে রিটার্ন করতে পারবেন অথবা ৭ দিনের ভেতরে সাইজ পরিবর্তন করতে পারবেন।';
+      }
+
+      const faqCont = document.getElementById('dynamicFaqContainer');
+      if (faqCont) {
+        faqCont.innerHTML = '';
+        if (s.faqs && Array.isArray(s.faqs)) {
+          s.faqs.forEach((faq, idx) => {
+            if (faq.question || faq.answer) {
+              const fId = `faq_item_${idx}`;
+              faqCont.innerHTML += `
+                <div class="border border-zinc-200 rounded-xl overflow-hidden bg-zinc-50">
+                  <button type="button" onclick="toggleAccordion('${fId}', this.querySelector('i'))" class="w-full p-3 flex items-center justify-between font-bold text-zinc-800 hover:bg-zinc-100 text-left transition select-none">
+                    <span>${faq.question}</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-zinc-400 transition-transform duration-200"></i>
+                  </button>
+                  <div id="${fId}" class="hidden p-3.5 bg-white text-zinc-600 border-t border-zinc-200 leading-relaxed whitespace-pre-line">${faq.answer}</div>
+                </div>
+              `;
+            }
+          });
+        }
+      }
+
+      updateSummaryPricing();
+      lucide.createIcons();
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      initMagnifierGlassZoom();
+
+      if (fromCart) {
+        currentOrderItems = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '[]');
+        if (currentOrderItems.length === 0) { window.location.href = homeShopUrl; return; }
+        document.getElementById('productLoadingBox')?.classList.add('hidden');
+        startCheckoutWizard();
+        return;
+      }
+
+      if (productId) {
+        loadProductReviews(productId);
+        db.ref(`${PATHS.products}/${productId}`).once('value', snap => {
+          const p = snap.val();
+          if (!p) { window.location.href = homeShopUrl; return; }
+          singleProductData = p;
+          document.getElementById('productLoadingBox')?.classList.add('hidden');
+          renderProductShowcase(p);
+          loadRelatedProducts(p.category, productId);
+        });
+      } else if (comboId) {
+        db.ref(`${PATHS.campaigns}/${comboId}`).once('value', snap => {
+          const c = snap.val();
+          if (!c) { window.location.href = homeShopUrl; return; }
+          document.getElementById('productLoadingBox')?.classList.add('hidden');
+          renderComboShowcase(c, comboId);
+        });
+      } else {
+        window.location.href = homeShopUrl;
+      }
+    });
+
+    function toggleAccordion(contentId, iconElement) {
+      const content = document.getElementById(contentId);
+      if (!content) return;
+      const isHidden = content.classList.contains('hidden');
+      if (isHidden) {
+        content.classList.remove('hidden');
+        if (iconElement) iconElement.classList.add('rotate-180');
+      } else {
+        content.classList.add('hidden');
+        if (iconElement) iconElement.classList.remove('rotate-180');
+      }
+    }
+
+    function initMagnifierGlassZoom() {
+      const box = document.getElementById('studioImgBox');
+      const img = document.getElementById('pShowcaseImage');
+      const badge = document.getElementById('zoomBadge');
+      if (!box || !img) return;
+
+      let isZoomed = false;
+      function updateOrigin(e) {
+        const rect = box.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const x = ((clientX - rect.left) / rect.width) * 100;
+        const y = ((clientY - rect.top) / rect.height) * 100;
+        img.style.transformOrigin = `${Math.max(0, Math.min(100, x))}% ${Math.max(0, Math.min(100, y))}%`;
+      }
+
+      box.addEventListener('click', (e) => {
+        isZoomed = !isZoomed;
+        if (isZoomed) {
+          updateOrigin(e);
+          box.classList.add('is-zoomed');
+          if (badge) badge.classList.add('opacity-0');
+        } else {
+          box.classList.remove('is-zoomed');
+          if (badge) badge.classList.remove('opacity-0');
+        }
+      });
+
+      box.addEventListener('mousemove', (e) => { if (isZoomed) updateOrigin(e); });
+      box.addEventListener('mouseleave', () => {
+        isZoomed = false;
+        box.classList.remove('is-zoomed');
+        if (badge) badge.classList.remove('opacity-0');
+      });
+    }
+
+    function renderProductShowcase(p) {
+      document.getElementById('productMainContent').classList.remove('hidden');
+      const imgEl = document.getElementById('pShowcaseImage');
+      imgEl.src = optimizeCloudinaryUrl(p.imageUrl, 750);
+
+      document.getElementById('pShowcaseTitle').innerText = p.name || '';
+      const catBadge = document.getElementById('pCategoryBadge');
+      if (catBadge) catBadge.innerText = p.category || 'Collection';
+
+      const price = Number(p.discountPrice || p.regularPrice) || 0;
+      document.getElementById('pShowcasePrice').innerText = `BDT ${price}`;
+      if (p.discountPrice && Number(p.discountPrice) < Number(p.regularPrice)) {
+        document.getElementById('pShowcaseOldPrice').innerText = `BDT ${p.regularPrice}`;
+      }
+
+      const desc = (p.description || '').trim();
+      const descEl = document.getElementById('pShowcaseDescription');
+      const descWrap = document.getElementById('pDescriptionWrap');
+      if (desc) {
+        descEl.innerText = desc;
+        descWrap.classList.remove('hidden');
+      } else {
+        descWrap.classList.add('hidden');
+      }
+
+      setupThumbnails(p.gallery || [p.imageUrl]);
+
+      // Colors
+      if (p.colors && p.colors.length > 0) {
+        document.getElementById('colorsWrap').classList.remove('hidden');
+        const cList = document.getElementById('colorsList');
+        cList.innerHTML = '';
+        if (!selectedColor || !p.colors.includes(selectedColor)) selectedColor = p.colors[0];
+        document.getElementById('selectedColorNameText').innerText = selectedColor;
+
+        p.colors.forEach(c => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          const isSel = (c === selectedColor);
+          btn.className = `px-3.5 py-1.5 rounded-xl border text-xs font-bold transition active:scale-95 ${isSel ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-white border-zinc-200 text-zinc-700 hover:border-zinc-400'}`;
+          btn.innerText = c;
+          btn.onclick = () => {
+            selectedColor = c;
+            document.getElementById('selectedColorNameText').innerText = c;
+            if (p.colorImages && p.colorImages[c] && p.colorImages[c][0]) {
+              imgEl.src = optimizeCloudinaryUrl(p.colorImages[c][0], 750);
+              setupThumbnails(p.colorImages[c]);
+            }
+            renderProductSizeButtons(p);
+            syncProductOrderState();
+          };
+          cList.appendChild(btn);
+        });
+      }
+
+      // Sizes
+      if (p.sizes && p.sizes.length > 0) {
+        document.getElementById('sizesWrap').classList.remove('hidden');
+        renderProductSizeButtons(p);
+      } else {
+        document.getElementById('sizesWrap').classList.add('hidden');
+        updateStockStatusUI();
+      }
+
+      syncProductOrderState();
+      lucide.createIcons();
+    }
+
+    function getSizeStock(sizeVal) {
+      if (!singleProductData) return 0;
+      if (singleProductData.sizeStock && typeof singleProductData.sizeStock === 'object') {
+        return Number(singleProductData.sizeStock[sizeVal]) || 0;
+      }
+      return Number(singleProductData.stock) || 0;
+    }
+
+    function getSelectedSizeStock() {
+      if (!singleProductData) return 0;
+      if (singleProductData.sizes && singleProductData.sizes.length > 0) {
+        return getSizeStock(selectedSize);
+      }
+      return Number(singleProductData.stock) || 0;
+    }
+
+    function getProductUnitPrice(p, sizeVal) {
+      if (!p) return 0;
+      const pDisc = Number(p.discountPrice);
+      const pReg = Number(p.regularPrice);
+      const base = (!isNaN(pDisc) && pDisc > 0) ? pDisc : ((!isNaN(pReg) && pReg > 0) ? pReg : 0);
+      if (sizeVal && p.sizePrices && p.sizePrices[sizeVal] !== undefined) {
+        const cPrice = Number(p.sizePrices[sizeVal]);
+        if (!isNaN(cPrice) && cPrice > 0) return cPrice;
+      }
+      return base;
+    }
+
+    function renderProductSizeButtons(p) {
+      const sList = document.getElementById('sizesList');
+      sList.innerHTML = '';
+
+      // বাই-ডিফল্ট সাইজ সিলেক্ট থাকবে না, ইউজার ক্লিক করার পর সিলেক্ট হবে
+      const currentPrice = selectedSize ? getProductUnitPrice(p, selectedSize) : Number(p.discountPrice || p.regularPrice || 0);
+      document.getElementById('pShowcasePrice').innerText = `৳${currentPrice}`;
+
+      p.sizes.forEach((s, idx) => {
+        const val = typeof s === 'object' ? s.size : s;
+        const stockQty = getSizeStock(val);
+        const isOutOfStock = stockQty <= 0;
+        const isSelected = (val === selectedSize);
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+
+        if (isOutOfStock) {
+          btn.className = 'px-4 py-2 rounded-xl border text-xs font-semibold line-through cursor-not-allowed opacity-40 border-zinc-200 bg-zinc-50 text-zinc-400';
+          btn.innerText = val;
+        } else {
+          // ডিপ গ্রিন সিলেক্টেড বর্ডার ও ব্যাকগ্রাউন্ড
+          btn.className = `px-4 py-2 rounded-xl border text-xs font-bold transition active:scale-95 flex items-center justify-center ${isSelected ? 'border-2 border-[#008a44] bg-emerald-50 text-[#008a44]' : 'bg-white border-zinc-300 text-zinc-700 hover:border-zinc-400'}`;
+          btn.innerText = val;
+          btn.onclick = () => {
+            selectedSize = val;
+            singleQty = 1;
+            document.getElementById('qtyCount').innerText = 1;
+            
+            // সাইজ ক্লিক করলে ছবি পরিবর্তন (যদি সাইজের নির্দিষ্ট ছবি বা গ্যালারি থাকে)
+            if (p.sizeImages && p.sizeImages[val]) {
+              document.getElementById('pShowcaseImage').src = optimizeCloudinaryUrl(p.sizeImages[val], 750);
+            } else if (p.gallery && p.gallery[idx]) {
+              // সাইজ ইনডেক্স অনুযায়ী আনুমানিক ছবি পরিবর্তন
+              document.getElementById('pShowcaseImage').src = optimizeCloudinaryUrl(p.gallery[idx], 750);
+            }
+
+            const newPrice = getProductUnitPrice(singleProductData, val);
+            document.getElementById('pShowcasePrice').innerText = `৳${newPrice}`;
+            renderProductSizeButtons(singleProductData);
+            syncProductOrderState();
+          };
+        }
+        sList.appendChild(btn);
+      });
+
+      updateStockStatusUI();
+    }
+
+    function updateStockStatusUI() {
+      const currentStock = getSelectedSizeStock();
+      const stockDisplayEl = document.getElementById('selectedSizeStockText');
+      const dBtn = document.getElementById('desktopCheckoutBtn');
+      const mBtn = document.getElementById('mobileCheckoutBtn');
+      const dCartBtn = document.getElementById('desktopAddToCartBtn');
+      const mCartBtn = document.getElementById('mobileAddToCartBtn');
+
+      if (stockDisplayEl) {
+        if (currentStock > 0) {
+          stockDisplayEl.innerHTML = `<span class="inline-flex items-center gap-1.5 text-zinc-900 font-bold text-xs font-mono"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>স্টক: ${currentStock} টি</span>`;
+        } else {
+          stockDisplayEl.innerHTML = `<span class="inline-flex items-center gap-1.5 text-rose-600 font-bold text-xs"><span class="w-1.5 h-1.5 rounded-full bg-rose-600"></span>Stock Out</span>`;
+        }
+      }
+
+      const isOutOfStock = currentStock <= 0;
+      if (dCartBtn) dCartBtn.disabled = isOutOfStock;
+      if (mCartBtn) mCartBtn.disabled = isOutOfStock;
+      if (dBtn) dBtn.disabled = isOutOfStock;
+      if (mBtn) mBtn.disabled = isOutOfStock;
+    }
+
+    function setupThumbnails(galleryUrls) {
+      const thumbCont = document.getElementById('galleryThumbnailsContainer');
+      const imgEl = document.getElementById('pShowcaseImage');
+      if (galleryUrls && galleryUrls.length > 1) {
+        thumbCont.classList.remove('hidden');
+        thumbCont.innerHTML = '';
+        galleryUrls.forEach(url => {
+          const t = document.createElement('img');
+          t.src = optimizeCloudinaryUrl(url, 120);
+          t.className = "w-12 h-12 object-cover rounded-xl border border-zinc-200 hover:border-zinc-900 cursor-pointer bg-zinc-100 shrink-0 transition active:scale-95";
+          t.onclick = () => { imgEl.src = optimizeCloudinaryUrl(url, 750); };
+          thumbCont.appendChild(t);
+        });
+      } else {
+        thumbCont.classList.add('hidden');
+      }
+    }
+
+    function changeQty(delta) {
+      const maxStock = getSelectedSizeStock();
+      if (maxStock <= 0) return;
+      if (delta > 0 && singleQty >= maxStock) {
+        Swal.fire({ icon: 'info', title: 'স্টক লিমিট', text: `এই সাইজের সর্বোচ্চ ${maxStock} টি স্টক আছে।` });
+        return;
+      }
+      singleQty += delta;
+      if (singleQty < 1) singleQty = 1;
+      if (singleQty > maxStock) singleQty = maxStock;
+      document.getElementById('qtyCount').innerText = singleQty;
+      syncProductOrderState();
+    }
+
+    function syncProductOrderState() {
+      if (!singleProductData) return;
+      const currentImg = document.getElementById('pShowcaseImage').src;
+      const unitPrice = Number(getProductUnitPrice(singleProductData, selectedSize)) || 0;
+      document.getElementById('pShowcasePrice').innerText = `৳${unitPrice}`;
+
+      currentOrderItems = [{
+        id: productId,
+        name: singleProductData.name,
+        price: unitPrice,
+        imageUrl: currentImg || singleProductData.imageUrl,
+        isFreeDelivery: !!singleProductData.isFreeDelivery,
+        codEnabled: singleProductData.codEnabled !== false && singleProductData.codEnabled !== 'false',
+        advanceRequired: singleProductData.advanceRequired === true || singleProductData.advanceRequired === 'true',
+        selectedSize: selectedSize,
+        selectedColor: selectedColor,
+        quantity: singleQty
+      }];
+
+      // স্টিকি বারে ছবি, টাইটেল ও ডিপ গ্রিন প্রাইস আপডেট
+      const sImg = document.getElementById('stickyThumbImg');
+      if (sImg) sImg.src = optimizeCloudinaryUrl(currentImg || singleProductData.imageUrl, 100);
+      const sTitle = document.getElementById('stickyBottomTitle');
+      if (sTitle) sTitle.innerText = singleProductData.name || '';
+      document.getElementById('stickyBottomPrice').innerText = `৳${unitPrice * singleQty}`;
+
+      // হোয়াটসঅ্যাপ অর্ডার বাটনে মেসেজ রেডি করা
+      const waBtn = document.getElementById('btnProductWaOrder');
+      if (waBtn && storeSettings.phone) {
+        const cleanP = storeSettings.phone.replace(/[^0-9]/g, '');
+        const waNum = cleanP.startsWith('88') ? cleanP : ('88' + cleanP);
+        waBtn.href = `https://wa.me/${waNum}?text=${encodeURIComponent('Hello, I want to order: ' + singleProductData.name + (selectedSize ? ' (Size: ' + selectedSize + ')' : '') + ' - Total: ৳' + (unitPrice * singleQty))}`;
+      }
+
+      updateSummaryPricing();
+      updateStockStatusUI();
+    }
+
+    function addProductToCart() {
+      if (singleProductData && singleProductData.sizes && singleProductData.sizes.length > 0 && !selectedSize) {
+        Swal.fire({ icon: 'warning', title: 'সাইজ নির্বাচন করুন', text: 'কার্টে যোগ করতে অনুগ্রহ করে একটি সাইজ সিলেক্ট করুন।' });
+        return;
+      }
+      if (getSelectedSizeStock() <= 0) {
+        Swal.fire({ icon: 'warning', title: 'স্টক শেষ', text: 'এই সাইজটি বর্তমানে স্টকে নেই।' });
+        return;
+      }
+      syncProductOrderState();
+      const newItem = currentOrderItems[0];
+      let cart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '[]');
+      const idx = cart.findIndex(it => it.id === newItem.id && it.selectedSize === newItem.selectedSize && it.selectedColor === newItem.selectedColor);
+      if (idx > -1) {
+        cart[idx].quantity = (Number(cart[idx].quantity) || 1) + (Number(newItem.quantity) || 1);
+      } else {
+        cart.push({ ...newItem });
+      }
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+      Swal.fire({
+        icon: 'success',
+        title: 'কার্টে যোগ করা হয়েছে!',
+        text: `${newItem.name} কার্টে সফলভাবে যুক্ত হয়েছে।`,
+        showCancelButton: true,
+        confirmButtonText: 'কার্ট দেখুন',
+        cancelButtonText: 'আরও কেনাকাটা করুন',
+        confirmButtonColor: '#09090b',
+        cancelButtonColor: '#71717a'
+      }).then(r => {
+        if (r.isConfirmed) window.location.href = isSubdomain ? 'cart.html' : `cart.html?shop=${encodeURIComponent(currentShop)}`;
+      });
+    }
+
+    function startCheckoutWizard() {
+      if (!fromCart && singleProductData && singleProductData.sizes && singleProductData.sizes.length > 0 && !selectedSize) {
+        Swal.fire({ icon: 'warning', title: 'সাইজ নির্বাচন করুন', text: 'অর্ডার করতে অনুগ্রহ করে আপনার কাঙ্ক্ষিত সাইজটি সিলেক্ট করুন।' });
+        return;
+      }
+      if (!fromCart && !comboId && getSelectedSizeStock() <= 0) {
+        Swal.fire({ icon: 'warning', title: 'স্টক শেষ', text: 'অনুগ্রহ করে অন্য কোনো সাইজ বেছে নিন।' });
+        return;
+      }
+      history.pushState({ screen: 'checkout' }, '', window.location.href);
+      document.getElementById('screen-product').classList.add('hidden');
+      document.getElementById('stickyOrderBar')?.classList.add('hidden');
+      document.getElementById('screen-checkout').classList.remove('hidden');
+
+      renderOnePageItems();
+      setupPaymentOptions();
+      updateSummaryPricing();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      lucide.createIcons();
+    }
+
+    function renderOnePageItems() {
+      const container = document.getElementById('onePageItemsList');
+      if (!container) return;
+      container.innerHTML = '';
+      document.getElementById('orderItemCountText').innerText = `${currentOrderItems.length} Item(s)`;
+
+      currentOrderItems.forEach(it => {
+        container.innerHTML += `
+          <div class="flex items-center gap-3 bg-white p-2.5 rounded-xl border border-zinc-200">
+            <img src="${optimizeCloudinaryUrl(it.imageUrl, 100)}" class="w-12 h-12 object-cover rounded-lg bg-zinc-100 shrink-0">
+            <div class="flex-1 min-w-0 pr-2">
+              <span class="font-bold text-zinc-900 text-xs block truncate">${it.name}</span>
+              <span class="text-zinc-500 text-[11px] block truncate">${it.selectedSize ? 'Size: ' + it.selectedSize + ' · ' : ''}Qty: ${it.quantity}</span>
+            </div>
+            <span class="font-mono font-bold text-xs shrink-0 text-zinc-900">BDT ${it.price * it.quantity}</span>
+          </div>
+        `;
+      });
+    }
+
+    function setupPaymentOptions() {
+      const isCod = currentOrderItems.every(it => it.codEnabled !== false && it.codEnabled !== 'false');
+      const isAdv = currentOrderItems.some(it => it.advanceRequired === true || it.advanceRequired === 'true');
+      document.getElementById('optCard-cod').style.display = isCod ? 'flex' : 'none';
+      document.getElementById('optCard-advance').style.display = isAdv ? 'flex' : 'none';
+      selectedPaymentMode = isAdv ? 'advance' : (isCod ? 'cod' : 'full');
+      renderPaymentModeCards();
+    }
+
+    function renderPaymentModeCards() {
+      ['full', 'advance', 'cod'].forEach(m => {
+        const card = document.getElementById(`optCard-${m}`);
+        if (!card) return;
+        const circle = card.querySelector('.rounded-full.shrink-0');
+        if (m === selectedPaymentMode) {
+          card.style.borderColor = '#09090b';
+          card.style.borderWidth = '2px';
+          card.style.backgroundColor = '#f4f4f5';
+          if (circle) circle.innerHTML = `<span class="w-2 h-2 rounded-full bg-zinc-900"></span>`;
+        } else {
+          card.style.borderColor = '#e4e4e7';
+          card.style.borderWidth = '1px';
+          card.style.backgroundColor = '#ffffff';
+          if (circle) circle.innerHTML = '';
+        }
+      });
+
+      const onlineArea = document.getElementById('onlinePaymentTriggerArea');
+      if (selectedPaymentMode === 'cod') {
+        onlineArea.classList.add('hidden');
+      } else {
+        onlineArea.classList.remove('hidden');
+        if (onlineProof.senderPhone) {
+          document.getElementById('pendingPaymentNotice').classList.add('hidden');
+          document.getElementById('savedPaymentNotice').classList.remove('hidden');
+          document.getElementById('savedPaymentSummary').innerText = `${onlineProof.channel.toUpperCase()} (${onlineProof.senderPhone})`;
+        } else {
+          document.getElementById('pendingPaymentNotice').classList.remove('hidden');
+          document.getElementById('savedPaymentNotice').classList.add('hidden');
+        }
+      }
+    }
+
+    function selectPaymentMode(m) {
+      selectedPaymentMode = m;
+      renderPaymentModeCards();
+    }
+
+    function calculateTotals() {
+      let subtotal = currentOrderItems.reduce((acc, it) => acc + (it.price * it.quantity), 0);
+      const isFree = currentOrderItems.length > 0 && currentOrderItems.every(it => it.isFreeDelivery);
+      const zoneRadio = document.querySelector('input[name="deliveryZone"]:checked');
+      const zone = zoneRadio ? zoneRadio.value : 'inside';
+
+      let fee = storeSettings.delInside !== undefined ? Number(storeSettings.delInside) : 60;
+      if (zone === 'sub') fee = storeSettings.delSub !== undefined ? Number(storeSettings.delSub) : 100;
+      else if (zone === 'outside') fee = storeSettings.delOutside !== undefined ? Number(storeSettings.delOutside) : 130;
+      if (isFree) fee = 0;
+
+      const grandTotal = subtotal + fee;
+      let payingNow = 0;
+      let dueAtDelivery = grandTotal;
+
+      if (selectedPaymentMode === 'full') {
+        payingNow = grandTotal;
+        dueAtDelivery = 0;
+      } else if (selectedPaymentMode === 'advance') {
+        payingNow = fee;
+        dueAtDelivery = subtotal;
+      }
+      return { subtotal, deliveryFee: fee, grandTotal, payingNow, dueAtDelivery, zone };
+    }
+
+    function updateSummaryPricing() {
+      const p = calculateTotals();
+      document.getElementById('opSubtotal').innerText = `BDT ${p.subtotal}`;
+      document.getElementById('opDelivery').innerText = `BDT ${p.deliveryFee}`;
+      document.getElementById('opGrandTotal').innerText = `BDT ${p.grandTotal}`;
+
+      const modalAmt = document.getElementById('modalAmountToPayDisplay');
+      if (modalAmt) {
+        modalAmt.innerText = `BDT ${selectedPaymentMode === 'full' ? p.grandTotal : p.deliveryFee}`;
+      }
+      renderPaymentModeCards();
+    }
+
+    function autoDetectDeliveryZone() {
+      const addr = (document.getElementById('custAddress')?.value || '').toLowerCase();
+      const dist = (document.getElementById('custDistrict')?.value || '').toLowerCase();
+      let target = 'inside';
+
+      const subKeys = ['savar', 'ashulia', 'keraniganj', 'dhamrai', 'gazipur', 'narayanganj', 'টঙ্গী', 'সাভার', 'আশুলিয়া', 'কেরানীগঞ্জ'];
+      if (['gazipur', 'narayanganj'].includes(dist) || subKeys.some(k => addr.includes(k))) {
+        target = 'sub';
+      } else if ((dist && dist !== 'dhaka') || (!addr.includes('dhaka') && addr.length > 10)) {
+        target = 'outside';
+      }
+      const r = document.querySelector(`input[name="deliveryZone"][value="${target}"]`);
+      if (r) r.checked = true;
+      updateSummaryPricing();
+    }
+
+    function openPaymentGatewayModal() {
+      const p = calculateTotals();
+      document.getElementById('modalAmountToPayDisplay').innerText = `BDT ${selectedPaymentMode === 'full' ? p.grandTotal : p.deliveryFee}`;
+      selectGatewayChannel(selectedGateway);
+      document.getElementById('paymentGatewayModal').classList.remove('hidden');
+      document.getElementById('paymentGatewayModal').classList.add('flex');
+    }
+
+    function closePaymentGatewayModal() {
+      document.getElementById('paymentGatewayModal').classList.add('hidden');
+      document.getElementById('paymentGatewayModal').classList.remove('flex');
+    }
+
+    function selectGatewayChannel(ch) {
+      selectedGateway = ch;
+      ['bkash', 'nagad', 'rocket'].forEach(c => {
+        const btn = document.getElementById(`gwBtn-${c}`);
+        if (btn) btn.className = `py-2.5 px-1 border rounded-xl flex flex-col items-center justify-center gap-1 ${c === ch ? 'border-2 border-zinc-900 bg-zinc-100 font-bold' : 'border-zinc-200 bg-white'}`;
+      });
+      document.getElementById('modalAccountDisplay').innerText = storeSettings[ch] || storeSettings.phone || '01989662768';
+    }
+
+    function copyModalNumber() {
+      const val = document.getElementById('modalAccountDisplay').innerText;
+      navigator.clipboard.writeText(val);
+      document.getElementById('copyBtnText').innerText = 'Copied!';
+      setTimeout(() => { document.getElementById('copyBtnText').innerText = 'Copy'; }, 2000);
+    }
+
+    function saveModalPaymentProof() {
+      const phone = document.getElementById('modalSenderPhone').value.trim();
+      const trx = document.getElementById('modalTrxId').value.trim();
+      if (phone.length < 11) {
+        Swal.fire({ icon: 'warning', title: 'মোবাইল নম্বর দিন', text: '১১ ডিজিটের নম্বর প্রদান করুন।' });
+        return;
+      }
+      onlineProof = { channel: selectedGateway, senderPhone: phone, trxId: trx };
+      closePaymentGatewayModal();
+      renderPaymentModeCards();
+    }
+
+    function submitOnePageOrder() {
+      const name = document.getElementById('custName').value.trim();
+      let phone = document.getElementById('custPhone').value.trim().replace(/[^0-9]/g, '');
+      const addr = document.getElementById('custAddress').value.trim();
+
+      if (name.length < 3) return Swal.fire({ icon: 'warning', title: 'সঠিক নাম লিখুন' });
+      if (phone.length !== 11) return Swal.fire({ icon: 'warning', title: '১১ ডিজিটের সঠিক ফোন নম্বর দিন' });
+      if (addr.length < 8) return Swal.fire({ icon: 'warning', title: 'বিস্তারিত ঠিকানা দিন' });
+
+      if ((selectedPaymentMode === 'full' || selectedPaymentMode === 'advance') && !onlineProof.senderPhone) {
+        openPaymentGatewayModal();
+        return;
+      }
+
+      const btn = document.getElementById('onePageSubmitBtn');
+      btn.disabled = true;
+      btn.innerHTML = `<div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> <span>Processing...</span>`;
+
+      const p = calculateTotals();
+      const payload = {
+        customerName: name,
+        phone: phone,
+        district: document.getElementById('custDistrict').value || '',
+        address: addr,
+        orderNote: document.getElementById('custOrderNote')?.value.trim() || '',
+        deliveryZone: p.zone,
+        deliveryFee: p.deliveryFee,
+        subtotal: p.subtotal,
+        totalAmount: p.grandTotal,
+        paymentType: selectedPaymentMode,
+        paymentMethod: selectedPaymentMode === 'cod' ? 'Cash on Delivery' : `${selectedPaymentMode.toUpperCase()} (${onlineProof.channel.toUpperCase()})`,
+        advancePaid: p.payingNow,
+        codAmount: p.dueAtDelivery,
+        senderNumber: onlineProof.senderPhone,
+        trxId: onlineProof.trxId,
+        items: currentOrderItems,
+        status: 'Pending',
+        createdAt: firebase.database.ServerValue.TIMESTAMP
+      };
+
+      db.ref(PATHS.orders).push(payload).then(() => {
+        if (fromCart) localStorage.removeItem(CART_STORAGE_KEY);
+        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        document.getElementById('successModal').classList.remove('hidden');
+        document.getElementById('successModal').classList.add('flex');
+      }).catch(err => {
+        Swal.fire({ icon: 'error', title: 'অর্ডার ব্যর্থ হয়েছে', text: err.message });
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4"></i><span>Confirm Order</span>`;
+        lucide.createIcons();
+      });
+    }
+
+    // Reviews System
+    function scrollToReviewsSection() {
+      const box = document.getElementById('reviewsContentBox');
+      const icon = document.getElementById('reviewsToggleIcon');
+      const section = document.getElementById('productReviewsSection');
+
+      if (box && box.classList.contains('hidden')) {
+        box.classList.remove('hidden');
+        if (icon) icon.classList.add('rotate-180');
+      }
+
+      if (section) {
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+
+    function loadProductReviews(pId) {
+      db.ref(`${PATHS.reviews}/${pId}`).on('value', snap => {
+        const val = snap.val() || {};
+        const container = document.getElementById('reviewsListContainer');
+        const badge = document.getElementById('reviewCountBadge');
+        const headerCount = document.getElementById('pHeaderReviewCount');
+        const ratingAvg = document.getElementById('pRatingAverage');
+        const revs = Object.values(val).filter(r => r.approved !== false);
+
+        if (badge) badge.innerText = revs.length;
+        if (headerCount) headerCount.innerText = revs.length;
+
+        if (revs.length === 0) {
+          if (ratingAvg) ratingAvg.innerText = "5.0";
+          container.innerHTML = '<p class="text-[11px] text-zinc-400 text-center py-2">কোনো রিভিউ এখনো দেওয়া হয়নি।</p>';
+          return;
+        }
+
+        const totalStars = revs.reduce((acc, r) => acc + (Number(r.rating) || 5), 0);
+        if (ratingAvg) ratingAvg.innerText = (totalStars / revs.length).toFixed(1);
+
+        container.innerHTML = revs.map(r => `
+          <div class="border-b border-zinc-100 pb-2.5">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-xs text-zinc-900">${r.author || 'Anonymous'}</span>
+              <span class="text-amber-500 text-xs">${'⭐'.repeat(r.rating || 5)}</span>
+            </div>
+            <p class="text-xs text-zinc-600 mt-1">${r.comment || ''}</p>
+          </div>
+        `).join('');
+      });
+    }
+
+    function submitProductReview() {
+      if (!productId) return;
+      const author = document.getElementById('revAuthor').value.trim();
+      const rating = Number(document.getElementById('revRating').value) || 5;
+      const comment = document.getElementById('revComment').value.trim();
+
+      if (!author || !comment) {
+        Swal.fire({ icon: 'warning', title: 'নাম ও মতামত উভয়ই পূরণ করুন।' });
+        return;
+      }
+
+      db.ref(`${PATHS.reviews}/${productId}`).push({
+        author,
+        rating,
+        comment,
+        approved: true,
+        createdAt: firebase.database.ServerValue.TIMESTAMP
+      }).then(() => {
+        Swal.fire({ icon: 'success', title: 'ধন্যবাদ!', text: 'আপনার মূল্যবান মতামত যুক্ত হয়েছে।' });
+        document.getElementById('revAuthor').value = '';
+        document.getElementById('revComment').value = '';
+      });
+    }
+
+    function loadRelatedProducts(category, currentPId) {
+      db.ref(PATHS.products).once('value', snap => {
+        const data = snap.val();
+        if (!data) return;
+
+        const allProducts = Object.keys(data).map(k => ({ id: k, ...data[k] }));
+        // এক ক্যাটাগরি অথবা অন্যান্য প্রোডাক্ট ফিল্টার
+        let related = allProducts.filter(item => item.id !== currentPId);
+        if (category) {
+          const sameCat = related.filter(item => item.category === category);
+          if (sameCat.length >= 2) related = sameCat;
+        }
+
+        const wrap = document.getElementById('relatedProductsWrap');
+        const list = document.getElementById('relatedProductsList');
+
+        if (related.length === 0) {
+          wrap.classList.add('hidden');
+          return;
+        }
+
+        wrap.classList.remove('hidden');
+        list.innerHTML = related.slice(0, 4).map(item => {
+          const price = item.discountPrice || item.regularPrice || 0;
+          const oldPrice = item.discountPrice ? item.regularPrice : null;
+          const link = isSubdomain ? `checkout.html?id=${item.id}` : `checkout.html?shop=${encodeURIComponent(currentShop)}&id=${item.id}`;
+          return `
+            <a href="${link}" class="group bg-white rounded-xl border border-zinc-200 overflow-hidden hover:shadow-md transition flex flex-col">
+              <div class="aspect-square bg-zinc-100 overflow-hidden">
+                <img src="${optimizeCloudinaryUrl(item.imageUrl, 400)}" alt="${item.name}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+              </div>
+              <div class="p-2.5 sm:p-3 flex-1 flex flex-col justify-between">
+                <h4 class="text-xs font-bold text-zinc-800 line-clamp-2 mb-1.5">${item.name}</h4>
+                <div class="flex items-baseline gap-2">
+                  <span class="text-xs font-black text-[#008a44]">৳${price}</span>
+                  ${oldPrice ? `<span class="text-[10px] text-zinc-400 line-through">৳${oldPrice}</span>` : ''}
+                </div>
+              </div>
+            </a>
+          `;
+        }).join('');
+        lucide.createIcons();
+      });
+    }
+
+    function renderComboShowcase(c, cId) {
+      singleProductData = {
+        name: c.title || 'Special Combo Offer',
+        regularPrice: c.regularPrice || 0,
+        discountPrice: c.offerPrice || c.price || 0,
+        imageUrl: c.bannerUrl || c.imageUrl || LOGO_PLACEHOLDER,
+        isFreeDelivery: !!c.isFreeDelivery,
+        codEnabled: true,
+        sizes: []
+      };
+      renderProductShowcase(singleProductData);
+    }
+
+    function handleSmartBack() {
+      if (!document.getElementById('screen-checkout').classList.contains('hidden') && !fromCart) {
+        window.history.back();
+      } else {
+        window.location.href = homeShopUrl;
+      }
+    }
+
+    window.addEventListener('popstate', () => {
+      const checkoutScreen = document.getElementById('screen-checkout');
+      if (checkoutScreen && !checkoutScreen.classList.contains('hidden') && !fromCart) {
+        checkoutScreen.classList.add('hidden');
+        document.getElementById('screen-product')?.classList.remove('hidden');
+        document.getElementById('stickyOrderBar')?.classList.remove('hidden');
+      } else {
+        window.location.href = homeShopUrl;
+      }
+    });
+  </script>
+</body>
+</html>
